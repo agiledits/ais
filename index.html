@@ -1,1539 +1,437 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ABC Trading Corp. - Accounting Information System</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/index.css">
-<style>
-  body { font-family: 'Inter', sans-serif; }
-  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
-  .nav-item.active { background: linear-gradient(90deg, #1e40af, #3b82f6); color: white; }
-  .nav-item.active .nav-icon { color: white; }
-  .fade-in { animation: fadeIn 0.3s ease-in; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .table-row:hover { background-color: #f8fafc; }
-  .dr { color: #059669; font-weight: 500; }
-  .cr { color: #dc2626; font-weight: 500; }
-  @media print {
-    .no-print { display: none !important; }
-    body { background: white; }
-  }
-  .badge { padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
-  .badge-asset { background: #dbeafe; color: #1e40af; }
-  .badge-liability { background: #fee2e2; color: #991b1b; }
-  .badge-equity { background: #fef3c7; color: #92400e; }
-  .badge-income { background: #d1fae5; color: #065f46; }
-  .badge-expense { background: #e0e7ff; color: #3730a3; }
-  .modal-overlay { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Trading Corp. - Accounting Information System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        .module-section { display: none; }
+        .module-section.active { display: block; }
+        .nav-item { transition: all 0.2s; cursor: pointer; }
+        .nav-item.active { background-color: #e0e7ff; color: #3730a3; font-weight: 600; border-right: 4px solid #4f46e5; }
+        .nav-item:hover:not(.active) { background-color: #f3f4f6; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .gl-accordion { cursor: pointer; }
+        .gl-accordion:hover { background-color: #f9fafb; }
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="bg-gray-50 text-gray-800 h-screen flex overflow-hidden">
 
-<div class="flex h-screen overflow-hidden">
-  <!-- Sidebar -->
-  <aside class="no-print w-64 bg-slate-900 text-slate-200 flex flex-col shadow-xl">
-    <div class="p-5 border-b border-slate-700">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white">A</div>
-        <div>
-          <h1 class="font-bold text-white text-sm">ABC Trading Corp.</h1>
-          <p class="text-xs text-slate-400">Accounting System</p>
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        <div class="p-4 border-b border-gray-200">
+            <h1 class="text-xl font-bold text-indigo-700">ABC Trading Corp.</h1>
+            <p class="text-xs text-gray-500">Accounting System</p>
         </div>
-      </div>
-    </div>
-    <nav class="flex-1 overflow-y-auto scrollbar-thin py-4">
-      <div class="px-4 text-xs uppercase text-slate-500 font-semibold mb-2">Main</div>
-      <button onclick="showModule('dashboard')" data-nav="dashboard" class="nav-item active w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📊</span> Dashboard
-      </button>
-      <button onclick="showModule('coa')" data-nav="coa" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📋</span> Chart of Accounts
-      </button>
-      
-      <div class="px-4 text-xs uppercase text-slate-500 font-semibold mt-4 mb-2">Journals</div>
-      <button onclick="showModule('pj')" data-nav="pj" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📥</span> Purchase Journal
-      </button>
-      <button onclick="showModule('cdj')" data-nav="cdj" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">💸</span> Cash Disbursement
-      </button>
-      <button onclick="showModule('sj')" data-nav="sj" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📤</span> Sales Journal
-      </button>
-      <button onclick="showModule('crj')" data-nav="crj" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">💰</span> Cash Receipts
-      </button>
-      <button onclick="showModule('gj')" data-nav="gj" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📝</span> General Journal
-      </button>
-
-      <div class="px-4 text-xs uppercase text-slate-500 font-semibold mt-4 mb-2">Reports</div>
-      <button onclick="showModule('gl')" data-nav="gl" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📚</span> General Ledger
-      </button>
-      <button onclick="showModule('tb')" data-nav="tb" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">⚖️</span> Trial Balance
-      </button>
-      <button onclick="showModule('is')" data-nav="is" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📈</span> Income Statement
-      </button>
-      <button onclick="showModule('bs')" data-nav="bs" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">🏦</span> Balance Sheet
-      </button>
-
-      <div class="px-4 text-xs uppercase text-slate-500 font-semibold mt-4 mb-2">BIR Compliance</div>
-      <button onclick="showModule('vat')" data-nav="vat" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">🧾</span> VAT Summary (2550M/Q)
-      </button>
-      <button onclick="showModule('ewt')" data-nav="ewt" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-800 transition">
-        <span class="nav-icon">📑</span> EWT Tracking
-      </button>
-    </nav>
-    <div class="p-4 border-t border-slate-700 text-xs text-slate-400">
-      <div class="flex justify-between"><span>Period:</span><span class="text-white font-semibold">Jan 2026</span></div>
-      <div class="flex justify-between mt-1"><span>Currency:</span><span class="text-white">PHP ₱</span></div>
-      <div class="flex justify-between mt-1"><span>Standard:</span><span class="text-white">PFRS</span></div>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto scrollbar-thin">
-    <header class="no-print bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-      <div>
-        <h2 id="moduleTitle" class="text-xl font-bold text-slate-800">Dashboard</h2>
-        <p id="moduleSubtitle" class="text-xs text-slate-500">Overview of ABC Trading Corp. financial position</p>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="exportCSV()" class="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-2">
-          📥 Export CSV
-        </button>
-        <button onclick="window.print()" class="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-2">
-          🖨️ Print
-        </button>
-        <button onclick="resetData()" class="px-4 py-2 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 flex items-center gap-2">
-          🔄 Reset Demo
-        </button>
-      </div>
-    </header>
-
-    <div id="content" class="p-8 fade-in"></div>
-  </main>
-</div>
-
-<!-- Modal -->
-<div id="modal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
-  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
-    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
-      <h3 id="modalTitle" class="text-lg font-bold">Add Entry</h3>
-      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl">×</button>
-    </div>
-    <div id="modalBody" class="p-6"></div>
-  </div>
-</div>
-
-<script>
-// ============ DATA LAYER ============
-const DEFAULT_DATA = {
-  company: {
-    name: "ABC Trading Corp.",
-    address: "Makati City, Philippines",
-    currency: "PHP",
-    tin: "000-000-000-000",
-    period: "January 2026",
-    rdo: "RDO 046 - Makati City"
-  },
-  chartOfAccounts: [
-    {code:"1000",title:"Cash on Hand",type:"Asset",normal:"Debit",statement:"SFP",description:"Petty cash and undeposited collections",active:true},
-    {code:"1010",title:"Cash in Bank - BDO Current",type:"Asset",normal:"Debit",statement:"SFP",description:"Operating account - BDO Unibank",active:true},
-    {code:"1020",title:"Cash in Bank - BPI Savings",type:"Asset",normal:"Debit",statement:"SFP",description:"Savings account - BPI",active:true},
-    {code:"1100",title:"Accounts Receivable - Trade",type:"Asset",normal:"Debit",statement:"SFP",description:"Amounts due from customers",active:true},
-    {code:"1110",title:"Allowance for Doubtful Accounts",type:"Asset (Contra)",normal:"Credit",statement:"SFP",description:"Estimated uncollectible A/R",active:true},
-    {code:"1200",title:"Merchandise Inventory",type:"Asset",normal:"Debit",statement:"SFP",description:"Goods held for sale - perpetual",active:true},
-    {code:"1300",title:"Input VAT",type:"Asset",normal:"Debit",statement:"SFP",description:"12% VAT on purchases",active:true},
-    {code:"1400",title:"Prepaid Expenses",type:"Asset",normal:"Debit",statement:"SFP",description:"Insurance, rent, prepayments",active:true},
-    {code:"1500",title:"Office Supplies",type:"Asset",normal:"Debit",statement:"SFP",description:"Unused office supplies",active:true},
-    {code:"1600",title:"Property and Equipment",type:"Asset",normal:"Debit",statement:"SFP",description:"Furniture, fixtures, equipment",active:true},
-    {code:"1610",title:"Accum. Depreciation - PPE",type:"Asset (Contra)",normal:"Credit",statement:"SFP",description:"Accumulated depreciation",active:true},
-    {code:"2000",title:"Accounts Payable - Trade",type:"Liability",normal:"Credit",statement:"SFP",description:"Amounts owed to suppliers",active:true},
-    {code:"2100",title:"Output VAT",type:"Liability",normal:"Credit",statement:"SFP",description:"12% VAT on sales",active:true},
-    {code:"2200",title:"VAT Payable",type:"Liability",normal:"Credit",statement:"SFP",description:"Net VAT due to BIR",active:true},
-    {code:"2300",title:"Withholding Tax Payable",type:"Liability",normal:"Credit",statement:"SFP",description:"EWT payable",active:true},
-    {code:"2400",title:"SSS/PhilHealth/Pag-IBIG Payable",type:"Liability",normal:"Credit",statement:"SFP",description:"Statutory contributions",active:true},
-    {code:"2500",title:"Salaries Payable",type:"Liability",normal:"Credit",statement:"SFP",description:"Accrued salaries",active:true},
-    {code:"2600",title:"Notes Payable",type:"Liability",normal:"Credit",statement:"SFP",description:"Short-term bank loans",active:true},
-    {code:"3000",title:"Share Capital",type:"Equity",normal:"Credit",statement:"SFP",description:"Issued capital stock",active:true},
-    {code:"3100",title:"Retained Earnings",type:"Equity",normal:"Credit",statement:"SFP",description:"Accumulated profits",active:true},
-    {code:"3200",title:"Drawings / Dividends",type:"Equity (Contra)",normal:"Debit",statement:"SFP",description:"Owner withdrawals",active:true},
-    {code:"4000",title:"Sales",type:"Income",normal:"Credit",statement:"SCI",description:"Revenue from merchandise",active:true},
-    {code:"4100",title:"Sales Returns & Allowances",type:"Income (Contra)",normal:"Debit",statement:"SCI",description:"Returns granted",active:true},
-    {code:"4200",title:"Sales Discounts",type:"Income (Contra)",normal:"Debit",statement:"SCI",description:"Cash discounts taken",active:true},
-    {code:"4300",title:"Other Income",type:"Income",normal:"Credit",statement:"SCI",description:"Interest income, misc",active:true},
-    {code:"5000",title:"Cost of Goods Sold",type:"Expense",normal:"Debit",statement:"SCI",description:"Cost of merchandise sold",active:true},
-    {code:"5100",title:"Purchases",type:"Expense",normal:"Debit",statement:"SCI",description:"Merchandise purchases",active:true},
-    {code:"5200",title:"Purchase Returns",type:"Expense (Contra)",normal:"Credit",statement:"SCI",description:"Returns to suppliers",active:true},
-    {code:"5300",title:"Purchase Discounts",type:"Expense (Contra)",normal:"Credit",statement:"SCI",description:"Discounts from suppliers",active:true},
-    {code:"6000",title:"Salaries & Wages Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Employee compensation",active:true},
-    {code:"6100",title:"Rent Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Office and warehouse rent",active:true},
-    {code:"6200",title:"Utilities Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Electricity, water, internet",active:true},
-    {code:"6300",title:"Office Supplies Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Consumed supplies",active:true},
-    {code:"6400",title:"Depreciation Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Depreciation of PPE",active:true},
-    {code:"6500",title:"Transportation & Travel",type:"Expense",normal:"Debit",statement:"SCI",description:"Delivery, fuel, travel",active:true},
-    {code:"6600",title:"Professional Fees",type:"Expense",normal:"Debit",statement:"SCI",description:"Legal, audit fees",active:true},
-    {code:"6700",title:"Taxes and Licenses",type:"Expense",normal:"Debit",statement:"SCI",description:"Business permits, BIR fees",active:true},
-    {code:"6800",title:"Miscellaneous Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Other operating expenses",active:true},
-    {code:"6900",title:"Interest Expense",type:"Expense",normal:"Debit",statement:"SCI",description:"Interest on loans",active:true}
-  ],
-  // Purchase Journal: credit purchases
-  purchaseJournal: [
-    {date:"2026-01-05",ref:"PJ-001",supplier:"Manila Wholesale Corp.",desc:"Inventory - Inv #MWC-4521",acct:"1200",title:"Merchandise Inventory",merch:50000,other:0,inputVAT:6000,ap:56000,terms:"n/30",posted:true},
-    {date:"2026-01-08",ref:"PJ-002",supplier:"Office Depot PH",desc:"Office supplies - Inv #OD-8892",acct:"1500",title:"Office Supplies",merch:0,other:8500,inputVAT:1020,ap:9520,terms:"n/15",posted:true},
-    {date:"2026-01-12",ref:"PJ-003",supplier:"Laguna Distributors Inc.",desc:"Merchandise - Inv #LDI-1205",acct:"1200",title:"Merchandise Inventory",merch:75000,other:0,inputVAT:9000,ap:84000,terms:"2/10,n/30",posted:true},
-    {date:"2026-01-15",ref:"PJ-004",supplier:"PLDT Enterprise",desc:"Internet & phone - Jan 2026",acct:"6200",title:"Utilities Expense",merch:0,other:4500,inputVAT:540,ap:5040,terms:"n/15",posted:true},
-    {date:"2026-01-18",ref:"PJ-005",supplier:"Ayala Property Mgmt",desc:"Office rent - Jan 2026",acct:"6100",title:"Rent Expense",merch:0,other:25000,inputVAT:3000,ap:28000,terms:"n/5",posted:true},
-    {date:"2026-01-22",ref:"PJ-006",supplier:"Metro Packaging Co.",desc:"Packaging materials",acct:"1200",title:"Merchandise Inventory",merch:12000,other:0,inputVAT:1440,ap:13440,terms:"n/30",posted:true},
-    {date:"2026-01-28",ref:"PJ-007",supplier:"Tech Solutions Inc.",desc:"Laptop for accounting",acct:"1600",title:"Property & Equipment",merch:0,other:35000,inputVAT:4200,ap:39200,terms:"n/30",posted:true}
-  ],
-  // Cash Disbursement Journal
-  cdj: [
-    {date:"2026-01-06",ref:"CHK-1001",payee:"Manila Wholesale Corp.",desc:"Inv MWC-4521 less discount",acct:"2000",title:"Accounts Payable",ap:56000,other:0,inputVAT:0,pdisc:1120,cash:54880,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-10",ref:"CHK-1002",payee:"Office Depot PH",desc:"Inv OD-8892",acct:"2000",title:"Accounts Payable",ap:9520,other:0,inputVAT:0,pdisc:0,cash:9520,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-14",ref:"CHK-1003",payee:"Meralco",desc:"Electricity Dec 2025",acct:"6200",title:"Utilities Expense",ap:0,other:12500,inputVAT:1500,pdisc:0,cash:14000,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-16",ref:"EWT-0116",payee:"BIR",desc:"EWT remittance",acct:"2300",title:"Withholding Tax Payable",ap:0,other:0,inputVAT:0,pdisc:0,cash:8500,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-20",ref:"CHK-1004",payee:"Ayala Property Mgmt",desc:"January rent",acct:"2000",title:"Accounts Payable",ap:28000,other:0,inputVAT:0,pdisc:0,cash:28000,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-25",ref:"CHK-1005",payee:"Employees Payroll",desc:"Semi-monthly salaries",acct:"6000",title:"Salaries & Wages",ap:0,other:85000,inputVAT:0,pdisc:0,cash:72000,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-27",ref:"CHK-1006",payee:"SSS/PhilHealth/Pag-IBIG",desc:"Employer contributions",acct:"2400",title:"SSS/PhilHealth/Pag-IBIG",ap:0,other:0,inputVAT:0,pdisc:0,cash:18500,ewt:0,bank:"BDO",posted:true},
-    {date:"2026-01-30",ref:"CHK-1007",payee:"Laguna Distributors Inc.",desc:"Partial payment LDI-1205",acct:"2000",title:"Accounts Payable",ap:40000,other:0,inputVAT:0,pdisc:0,cash:40000,ewt:0,bank:"BDO",posted:true}
-  ],
-  // Sales Journal: credit sales
-  salesJournal: [
-    {date:"2026-01-04",ref:"SI-2026-001",customer:"Quezon City Retail Co.",desc:"Assorted merchandise",terms:"n/30",ar:56000,sales:50000,outputVAT:6000,cogs:32000,inv:32000,posted:true},
-    {date:"2026-01-07",ref:"SI-2026-002",customer:"Cebu Distributors Inc.",desc:"Wholesale order",terms:"2/10,n/30",ar:112000,sales:100000,outputVAT:12000,cogs:65000,inv:65000,posted:true},
-    {date:"2026-01-11",ref:"SI-2026-003",customer:"Davao Trading Hub",desc:"Packaged goods",terms:"n/30",ar:33600,sales:30000,outputVAT:3600,cogs:18000,inv:18000,posted:true},
-    {date:"2026-01-17",ref:"SI-2026-004",customer:"Manila Mart Chain",desc:"Bulk order - Jan promo",terms:"n/15",ar:89600,sales:80000,outputVAT:9600,cogs:48000,inv:48000,posted:true},
-    {date:"2026-01-21",ref:"SI-2026-005",customer:"Iloilo Consumer Coop",desc:"Regular credit sale",terms:"n/30",ar:22400,sales:20000,outputVAT:2400,cogs:12500,inv:12500,posted:true},
-    {date:"2026-01-25",ref:"SI-2026-006",customer:"Baguio Highlands Store",desc:"Seasonal merchandise",terms:"2/10,n/30",ar:44800,sales:40000,outputVAT:4800,cogs:24000,inv:24000,posted:true},
-    {date:"2026-01-29",ref:"SI-2026-007",customer:"Quezon City Retail Co.",desc:"Follow-up order",terms:"n/30",ar:28000,sales:25000,outputVAT:3000,cogs:15500,inv:15500,posted:true}
-  ],
-  // Cash Receipts Journal
-  crj: [
-    {date:"2026-01-05",ref:"OR-0001",from:"Walk-in Customer",desc:"Cash sale - assorted",cash:16800,sdisc:0,ar:0,sales:15000,outputVAT:1800,other:0,cogs:9000,inv:9000,posted:true},
-    {date:"2026-01-09",ref:"OR-0002",from:"Cebu Distributors Inc.",desc:"Collection SI-2026-002 less 2%",cash:109760,sdisc:2240,ar:112000,sales:0,outputVAT:0,other:0,cogs:0,inv:0,posted:true},
-    {date:"2026-01-13",ref:"OR-0003",from:"Walk-in Customer",desc:"Cash sale - promo",cash:11200,sdisc:0,ar:0,sales:10000,outputVAT:1200,other:0,cogs:6000,inv:6000,posted:true},
-    {date:"2026-01-18",ref:"OR-0004",from:"Quezon City Retail Co.",desc:"Partial collection SI-001",cash:30000,sdisc:0,ar:30000,sales:0,outputVAT:0,other:0,cogs:0,inv:0,posted:true},
-    {date:"2026-01-22",ref:"OR-0005",from:"Manila Mart Chain",desc:"Full collection SI-004",cash:89600,sdisc:0,ar:89600,sales:0,outputVAT:0,other:0,cogs:0,inv:0,posted:true},
-    {date:"2026-01-26",ref:"OR-0006",from:"BDO Bank",desc:"Interest income",cash:1250,sdisc:0,ar:0,sales:0,outputVAT:0,other:1250,cogs:0,inv:0,posted:true},
-    {date:"2026-01-28",ref:"OR-0007",from:"Walk-in Customer",desc:"Cash sale",cash:22400,sdisc:0,ar:0,sales:20000,outputVAT:2400,other:0,cogs:12000,inv:12000,posted:true},
-    {date:"2026-01-31",ref:"OR-0008",from:"Iloilo Consumer Coop",desc:"Collection SI-005",cash:22400,sdisc:0,ar:22400,sales:0,outputVAT:0,other:0,cogs:0,inv:0,posted:true}
-  ],
-  // General Journal
-  generalJournal: [
-    {date:"2026-01-01",ref:"GJ-001",acct:"1010",title:"Cash in Bank - BDO Current",desc:"Opening balances - Jan 1, 2026",dr:350000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1020",title:"Cash in Bank - BPI Savings",desc:"",dr:85000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1100",title:"Accounts Receivable - Trade",desc:"",dr:125000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1200",title:"Merchandise Inventory",desc:"",dr:420000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1300",title:"Input VAT",desc:"",dr:18500,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1400",title:"Prepaid Expenses",desc:"",dr:12000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1500",title:"Office Supplies",desc:"",dr:8500,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1600",title:"Property & Equipment",desc:"",dr:280000,cr:0,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"1610",title:"Accum. Depreciation - PPE",desc:"",dr:0,cr:95000,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"2000",title:"Accounts Payable - Trade",desc:"",dr:0,cr:98000,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"2100",title:"Output VAT",desc:"",dr:0,cr:15200,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"2300",title:"Withholding Tax Payable",desc:"",dr:0,cr:8500,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"2400",title:"SSS/PhilHealth/Pag-IBIG Payable",desc:"",dr:0,cr:12500,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"2600",title:"Notes Payable",desc:"",dr:0,cr:150000,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"3000",title:"Share Capital",desc:"",dr:0,cr:500000,posted:true},
-    {date:"2026-01-01",ref:"GJ-001",acct:"3100",title:"Retained Earnings",desc:"",dr:0,cr:419800,posted:true},
-    {date:"2026-01-31",ref:"GJ-002",acct:"6400",title:"Depreciation Expense",desc:"Depreciation - Jan 2026",dr:4500,cr:0,posted:true},
-    {date:"2026-01-31",ref:"GJ-002",acct:"1610",title:"Accum. Depreciation - PPE",desc:"",dr:0,cr:4500,posted:true},
-    {date:"2026-01-31",ref:"GJ-003",acct:"6300",title:"Office Supplies Expense",desc:"Supplies used - Jan 2026",dr:3200,cr:0,posted:true},
-    {date:"2026-01-31",ref:"GJ-003",acct:"1500",title:"Office Supplies",desc:"",dr:0,cr:3200,posted:true},
-    {date:"2026-01-31",ref:"GJ-004",acct:"6900",title:"Interest Expense",desc:"Accrued interest - Notes Payable",dr:1800,cr:0,posted:true},
-    {date:"2026-01-31",ref:"GJ-004",acct:"2600",title:"Notes Payable",desc:"",dr:0,cr:1800,posted:true},
-    {date:"2026-01-31",ref:"GJ-005",acct:"6100",title:"Rent Expense",desc:"Prepaid rent expired",dr:5000,cr:0,posted:true},
-    {date:"2026-01-31",ref:"GJ-005",acct:"1400",title:"Prepaid Expenses",desc:"",dr:0,cr:5000,posted:true}
-  ]
-};
-
-let data = JSON.parse(localStorage.getItem('abcAccountingData')) || JSON.parse(JSON.stringify(DEFAULT_DATA));
-function saveData() { localStorage.setItem('abcAccountingData', JSON.stringify(data)); }
-function resetData() {
-  if (confirm('Reset all data to demo sample? This cannot be undone.')) {
-    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
-    saveData();
-    showModule(currentModule);
-  }
-}
-
-// ============ UTILITIES ============
-const fmt = n => '₱' + (Number(n)||0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtShort = n => '₱' + (Math.abs(Number(n)||0)/1000).toFixed(1) + 'K';
-function getAccount(code) { return data.chartOfAccounts.find(a => a.code === code); }
-function typeBadge(type) {
-  const t = type.toLowerCase();
-  if (t.includes('asset')) return 'badge-asset';
-  if (t.includes('liab')) return 'badge-liability';
-  if (t.includes('equity')) return 'badge-equity';
-  if (t.includes('income')) return 'badge-income';
-  return 'badge-expense';
-}
-
-// ============ GENERAL LEDGER COMPUTATION ============
-function computeGeneralLedger() {
-  const gl = {};
-  data.chartOfAccounts.forEach(a => {
-    gl[a.code] = {code:a.code, title:a.title, type:a.type, openingDr:0, openingCr:0, periodDr:0, periodCr:0};
-  });
-  
-  // Opening balances from GJ-001
-  data.generalJournal.filter(e => e.ref === 'GJ-001').forEach(e => {
-    if (gl[e.acct]) {
-      gl[e.acct].openingDr += e.dr;
-      gl[e.acct].openingCr += e.cr;
-    }
-  });
-  
-  // Purchase Journal totals
-  const pjTotals = data.purchaseJournal.reduce((s,e) => {
-    s[e.acct] = (s[e.acct]||0) + (e.merch + e.other);
-    s['1300'] = (s['1300']||0) + e.inputVAT;
-    s['2000'] = (s['2000']||0) + e.ap;
-    return s;
-  }, {});
-  
-  // Cash Disbursement Journal totals
-  const cdjTotals = data.cdj.reduce((s,e) => {
-    s[e.acct] = (s[e.acct]||0) + e.ap;
-    if (e.other > 0) {
-      // find the account for other expense (use acct if ap=0)
-      if (e.ap === 0) s[e.acct] = (s[e.acct]||0) + e.other;
-    }
-    s['1300'] = (s['1300']||0) + e.inputVAT;
-    s['5300'] = (s['5300']||0) + e.pdisc;
-    s['1010'] = (s['1010']||0) + e.cash; // cash out
-    s['2300'] = (s['2300']||0) + e.ewt;
-    return s;
-  }, {});
-  
-  // Sales Journal totals
-  const sjTotals = data.salesJournal.reduce((s,e) => {
-    s['1100'] = (s['1100']||0) + e.ar;
-    s['4000'] = (s['4000']||0) + e.sales;
-    s['2100'] = (s['2100']||0) + e.outputVAT;
-    s['5000'] = (s['5000']||0) + e.cogs;
-    s['1200'] = (s['1200']||0) + e.inv;
-    return s;
-  }, {});
-  
-  // Cash Receipts Journal totals
-  const crjTotals = data.crj.reduce((s,e) => {
-    s['1010'] = (s['1010']||0) + e.cash; // cash in
-    s['4200'] = (s['4200']||0) + e.sdisc;
-    s['1100'] = (s['1100']||0) + e.ar;
-    s['4000'] = (s['4000']||0) + e.sales;
-    s['2100'] = (s['2100']||0) + e.outputVAT;
-    s['4300'] = (s['4300']||0) + e.other;
-    s['5000'] = (s['5000']||0) + e.cogs;
-    s['1200'] = (s['1200']||0) + e.inv;
-    return s;
-  }, {});
-  
-  // General Journal (non-opening)
-  const gjTotals = data.generalJournal.filter(e => e.ref !== 'GJ-001').reduce((s,e) => {
-    s[e.acct] = s[e.acct] || {dr:0, cr:0};
-    s[e.acct].dr += e.dr;
-    s[e.acct].cr += e.cr;
-    return s;
-  }, {});
-  
-  // Now build period activity per account using the actual account debits/credits
-  // We need a more precise approach - compute per-account period Dr and Cr
-  
-  // Reset
-  Object.keys(gl).forEach(k => { gl[k].periodDr = 0; gl[k].periodCr = 0; });
-  
-  // Helper: add debit to account
-  function addDr(code, amt) { if (gl[code]) gl[code].periodDr += amt; }
-  function addCr(code, amt) { if (gl[code]) gl[code].periodCr += amt; }
-  
-  // Purchase Journal entries
-  data.purchaseJournal.forEach(e => {
-    addDr(e.acct, e.merch + e.other);
-    addDr('1300', e.inputVAT);
-    addCr('2000', e.ap);
-  });
-  
-  // CDJ entries
-  data.cdj.forEach(e => {
-    if (e.ap > 0) addDr(e.acct, e.ap);
-    if (e.other > 0 && e.ap === 0) addDr(e.acct, e.other);
-    addDr('1300', e.inputVAT);
-    addCr('5300', e.pdisc);
-    addCr('1010', e.cash);
-    addCr('2300', e.ewt);
-  });
-  
-  // Sales Journal entries
-  data.salesJournal.forEach(e => {
-    addDr('1100', e.ar);
-    addCr('4000', e.sales);
-    addCr('2100', e.outputVAT);
-    addDr('5000', e.cogs);
-    addCr('1200', e.inv);
-  });
-  
-  // CRJ entries
-  data.crj.forEach(e => {
-    addDr('1010', e.cash);
-    addDr('4200', e.sdisc);
-    addCr('1100', e.ar);
-    addCr('4000', e.sales);
-    addCr('2100', e.outputVAT);
-    addCr('4300', e.other);
-    addDr('5000', e.cogs);
-    addCr('1200', e.inv);
-  });
-  
-  // GJ non-opening
-  data.generalJournal.filter(e => e.ref !== 'GJ-001').forEach(e => {
-    addDr(e.acct, e.dr);
-    addCr(e.acct, e.cr);
-  });
-  
-  // Compute ending balances
-  Object.values(gl).forEach(a => {
-    const acct = getAccount(a.code);
-    const netOpen = a.openingDr - a.openingCr;
-    const netPeriod = a.periodDr - a.periodCr;
-    const ending = netOpen + netPeriod;
-    if (ending >= 0) { a.endingDr = ending; a.endingCr = 0; }
-    else { a.endingDr = 0; a.endingCr = -ending; }
-  });
-  
-  return gl;
-}
-
-function computeTrialBalance() {
-  const gl = computeGeneralLedger();
-  return Object.values(gl).filter(a => a.endingDr > 0 || a.endingCr > 0);
-}
-
-function computeIncomeStatement() {
-  const gl = computeGeneralLedger();
-  const accounts = Object.values(gl);
-  const income = accounts.filter(a => a.type === 'Income');
-  const expense = accounts.filter(a => a.type === 'Expense');
-  
-  const totalRevenue = income.reduce((s,a) => s + (a.endingCr - a.endingDr), 0);
-  const totalExpenses = expense.reduce((s,a) => s + (a.endingDr - a.endingCr), 0);
-  const netIncome = totalRevenue - totalExpenses;
-  
-  return { income, expense, totalRevenue, totalExpenses, netIncome };
-}
-
-// ============ MODULES ============
-let currentModule = 'dashboard';
-let chartInstances = {};
-
-function showModule(mod) {
-  currentModule = mod;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navBtn = document.querySelector(`[data-nav="${mod}"]`);
-  if (navBtn) navBtn.classList.add('active');
-  
-  // Destroy existing charts
-  Object.values(chartInstances).forEach(c => c.destroy());
-  chartInstances = {};
-  
-  const titles = {
-    dashboard: ['Dashboard', 'Financial overview and key performance indicators'],
-    coa: ['Chart of Accounts', 'Master list of accounts per PFRS'],
-    pj: ['Purchase Journal', 'Credit purchases of merchandise and expenses'],
-    cdj: ['Cash Disbursement Journal', 'All cash payments and disbursements'],
-    sj: ['Sales Journal', 'Credit sales with perpetual inventory COGS'],
-    crj: ['Cash Receipts Journal', 'Cash collections, cash sales, other receipts'],
-    gj: ['General Journal', 'Opening balances, adjusting and correcting entries'],
-    gl: ['General Ledger', 'Automated summary from all journals'],
-    tb: ['Trial Balance', 'Ending balances - Debits must equal Credits'],
-    is: ['Income Statement', 'Statement of Comprehensive Income'],
-    bs: ['Balance Sheet', 'Statement of Financial Position'],
-    vat: ['VAT Summary', 'BIR Form 2550M/2550Q preparation support'],
-    ewt: ['Expanded Withholding Tax', 'EWT tracking and remittance']
-  };
-  document.getElementById('moduleTitle').textContent = titles[mod][0];
-  document.getElementById('moduleSubtitle').textContent = titles[mod][1];
-  
-  const content = document.getElementById('content');
-  content.classList.remove('fade-in');
-  void content.offsetWidth;
-  content.classList.add('fade-in');
-  
-  const renderers = {dashboard:renderDashboard, coa:renderCOA, pj:renderPJ, cdj:renderCDJ, sj:renderSJ, crj:renderCRJ, gj:renderGJ, gl:renderGL, tb:renderTB, is:renderIS, bs:renderBS, vat:renderVAT, ewt:renderEWT};
-  renderers[mod]();
-}
-
-// ============ DASHBOARD ============
-function renderDashboard() {
-  const is = computeIncomeStatement();
-  const gl = computeGeneralLedger();
-  const totalAssets = Object.values(gl).filter(a => a.type === 'Asset').reduce((s,a) => s + a.endingDr - a.endingCr, 0);
-  const totalLiabilities = Object.values(gl).filter(a => a.type === 'Liability').reduce((s,a) => s + a.endingCr - a.endingDr, 0);
-  const cashBalance = (gl['1010']?.endingDr||0) + (gl['1020']?.endingDr||0) + (gl['1000']?.endingDr||0);
-  const arBalance = gl['1100']?.endingDr||0;
-  const apBalance = gl['2000']?.endingCr||0;
-  const invBalance = gl['1200']?.endingDr||0;
-  
-  document.getElementById('content').innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      ${kpiCard('Total Revenue', fmt(is.totalRevenue), '📈', 'from sales', 'text-green-600', 'bg-green-50')}
-      ${kpiCard('Net Income', fmt(is.netIncome), '💹', 'profit for period', 'text-blue-600', 'bg-blue-50')}
-      ${kpiCard('Total Assets', fmt(totalAssets), '🏢', 'as of Jan 31, 2026', 'text-indigo-600', 'bg-indigo-50')}
-      ${kpiCard('Cash Position', fmt(cashBalance), '💰', 'BDO + BPI + Cash on Hand', 'text-emerald-600', 'bg-emerald-50')}
-    </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-4">Revenue vs Expenses</h3>
-        <canvas id="chartRevenue" height="200"></canvas>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-4">Expense Breakdown</h3>
-        <canvas id="chartExpenses" height="200"></canvas>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-4">Key Ratios</h3>
-        <div class="space-y-3">
-          ${ratioRow('Gross Profit Margin', ((is.totalRevenue - (gl['5000']?.endingDr||0)) / is.totalRevenue * 100).toFixed(2) + '%')}
-          ${ratioRow('Current Ratio', (totalAssets / totalLiabilities).toFixed(2))}
-          ${ratioRow('Net Profit Margin', (is.netIncome / is.totalRevenue * 100).toFixed(2) + '%')}
-          ${ratioRow('AR Turnover', (is.totalRevenue / arBalance).toFixed(2) + 'x')}
-          ${ratioRow('Inventory Turnover', ((gl['5000']?.endingDr||0) / invBalance).toFixed(2) + 'x')}
+        <nav class="flex-1 overflow-y-auto py-2 text-sm">
+            <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">Main</div>
+            <a class="nav-item active flex items-center px-4 py-2 text-gray-700" data-module="dashboard"><i class="fas fa-chart-line w-5 mr-2"></i> Dashboard</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="coa"><i class="fas fa-list-ul w-5 mr-2"></i> Chart of Accounts</a>
+            
+            <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-400 uppercase">Journals</div>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="pj"><i class="fas fa-arrow-down w-5 mr-2"></i> Purchase Journal</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="cd"><i class="fas fa-money-bill-wave w-5 mr-2"></i> Cash Disbursement</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="sj"><i class="fas fa-arrow-up w-5 mr-2"></i> Sales Journal</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="cr"><i class="fas fa-coins w-5 mr-2"></i> Cash Receipts</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="gj"><i class="fas fa-pen w-5 mr-2"></i> General Journal</a>
+            
+            <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-400 uppercase">Reports</div>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="gl"><i class="fas fa-book w-5 mr-2"></i> General Ledger</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="tb"><i class="fas fa-balance-scale w-5 mr-2"></i> Trial Balance</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="is"><i class="fas fa-chart-bar w-5 mr-2"></i> Income Statement</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="bs"><i class="fas fa-university w-5 mr-2"></i> Balance Sheet</a>
+            
+            <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-400 uppercase">BIR Compliance</div>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="vat"><i class="fas fa-receipt w-5 mr-2"></i> VAT Summary (2550M/Q)</a>
+            <a class="nav-item flex items-center px-4 py-2 text-gray-700" data-module="ewt"><i class="fas fa-file-invoice w-5 mr-2"></i> EWT Tracking</a>
+        </nav>
+        <div class="p-4 border-t border-gray-200 text-xs text-gray-500">
+            <p>Period: <strong>Jan 2026</strong></p>
+            <p>Currency: <strong>PHP ₱</strong></p>
         </div>
-      </div>
-    </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-4">Working Capital</h3>
-        <div class="space-y-3">
-          ${wcRow('Cash & Cash Equivalents', cashBalance)}
-          ${wcRow('Accounts Receivable', arBalance)}
-          ${wcRow('Merchandise Inventory', invBalance)}
-          ${wcRow('Accounts Payable', -apBalance, true)}
-          <div class="border-t pt-3 mt-3 flex justify-between font-bold">
-            <span>Net Working Capital</span>
-            <span class="${cashBalance+arBalance+invBalance-apBalance>=0?'text-green-600':'text-red-600'}">${fmt(cashBalance+arBalance+invBalance-apBalance)}</span>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-4">BIR Compliance Status</h3>
-        <div class="space-y-3">
-          ${complianceRow('Output VAT (Sales)', fmt(Object.values(gl).filter(a=>a.code==='2100')[0]?.endingCr||0))}
-          ${complianceRow('Input VAT (Purchases)', fmt(Object.values(gl).filter(a=>a.code==='1300')[0]?.endingDr||0))}
-          ${complianceRow('Net VAT Payable', fmt((gl['2100']?.endingCr||0) - (gl['1300']?.endingDr||0)))}
-          ${complianceRow('Withholding Tax Remitted', fmt(gl['2300']?.openingCr||0))}
-          ${complianceRow('Statutory Contributions', fmt(gl['2400']?.endingCr||0))}
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Revenue vs Expenses chart
-  chartInstances.rev = new Chart(document.getElementById('chartRevenue'), {
-    type: 'bar',
-    data: {
-      labels: ['Total Revenue', 'COGS', 'Gross Profit', 'Operating Exp', 'Net Income'],
-      datasets: [{
-        data: [is.totalRevenue, gl['5000']?.endingDr||0, is.totalRevenue-(gl['5000']?.endingDr||0), is.totalExpenses-(gl['5000']?.endingDr||0), is.netIncome],
-        backgroundColor: ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6']
-      }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₱'+(v/1000)+'K' } } } }
-  });
-  
-  // Expense breakdown
-  const expenses = is.expense.filter(e => e.endingDr > 0);
-  chartInstances.exp = new Chart(document.getElementById('chartExpenses'), {
-    type: 'doughnut',
-    data: {
-      labels: expenses.map(e => e.title),
-      datasets: [{ data: expenses.map(e => e.endingDr), backgroundColor: ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'] }]
-    },
-    options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
-  });
-}
+    </aside>
 
-function kpiCard(title, value, icon, sub, color, bg) {
-  return `<div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition">
-    <div class="flex justify-between items-start">
-      <div>
-        <p class="text-xs text-slate-500 uppercase font-semibold">${title}</p>
-        <p class="text-2xl font-bold mt-1 ${color}">${value}</p>
-        <p class="text-xs text-slate-400 mt-1">${sub}</p>
-      </div>
-      <div class="w-10 h-10 ${bg} rounded-lg flex items-center justify-center text-xl">${icon}</div>
-    </div>
-  </div>`;
-}
-function ratioRow(label, value) {
-  return `<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-sm text-slate-600">${label}</span><span class="font-semibold text-sm">${value}</span></div>`;
-}
-function wcRow(label, value, neg=false) {
-  return `<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-sm text-slate-600">${label}</span><span class="font-semibold text-sm ${value<0?'text-red-600':'text-slate-800'}">${fmt(value)}</span></div>`;
-}
-function complianceRow(label, value) {
-  return `<div class="flex justify-between py-2 border-b border-slate-100"><span class="text-sm text-slate-600">${label}</span><span class="font-semibold text-sm text-blue-700">${value}</span></div>`;
-}
-
-// ============ CHART OF ACCOUNTS ============
-function renderCOA() {
-  const rows = data.chartOfAccounts.map(a => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-4 py-2.5 font-mono font-semibold text-slate-700">${a.code}</td>
-      <td class="px-4 py-2.5">${a.title}</td>
-      <td class="px-4 py-2.5"><span class="badge ${typeBadge(a.type)}">${a.type}</span></td>
-      <td class="px-4 py-2.5 text-xs">${a.normal}</td>
-      <td class="px-4 py-2.5 text-xs text-slate-500">${a.description}</td>
-      <td class="px-4 py-2.5 text-center">
-        <button onclick="deleteAccount('${a.code}')" class="text-red-500 hover:text-red-700 text-xs">🗑️</button>
-      </td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div>
-          <h3 class="font-bold">Chart of Accounts</h3>
-          <p class="text-xs text-slate-500">As of January 2026 · Based on Philippine Financial Reporting Standards (PFRS)</p>
-        </div>
-        <button onclick="openAccountModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">+ Add Account</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600">
-            <tr>
-              <th class="px-4 py-3 text-left">Code</th>
-              <th class="px-4 py-3 text-left">Account Title</th>
-              <th class="px-4 py-3 text-left">Type</th>
-              <th class="px-4 py-3 text-left">Normal</th>
-              <th class="px-4 py-3 text-left">Description</th>
-              <th class="px-4 py-3 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-function openAccountModal() {
-  document.getElementById('modalTitle').textContent = 'Add New Account';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div><label class="text-xs font-semibold text-slate-600">Account Code</label><input id="a_code" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="e.g., 1700"></div>
-      <div><label class="text-xs font-semibold text-slate-600">Account Title</label><input id="a_title" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="e.g., Investment Property"></div>
-      <div><label class="text-xs font-semibold text-slate-600">Account Type</label>
-        <select id="a_type" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">
-          <option>Asset</option><option>Liability</option><option>Equity</option><option>Income</option><option>Expense</option>
-        </select>
-      </div>
-      <div><label class="text-xs font-semibold text-slate-600">Normal Balance</label>
-        <select id="a_normal" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option>Debit</option><option>Credit</option></select>
-      </div>
-      <div class="col-span-2"><label class="text-xs font-semibold text-slate-600">Description</label><input id="a_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="saveAccount()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Account</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function saveAccount() {
-  const code = document.getElementById('a_code').value.trim();
-  const title = document.getElementById('a_title').value.trim();
-  if (!code || !title) return alert('Code and Title are required');
-  if (data.chartOfAccounts.find(a => a.code === code)) return alert('Account code already exists');
-  data.chartOfAccounts.push({
-    code, title,
-    type: document.getElementById('a_type').value,
-    normal: document.getElementById('a_normal').value,
-    statement: ['Asset','Liability','Equity'].includes(document.getElementById('a_type').value) ? 'SFP' : 'SCI',
-    description: document.getElementById('a_desc').value,
-    active: true
-  });
-  saveData(); closeModal(); renderCOA();
-}
-function deleteAccount(code) {
-  if (confirm('Delete account ' + code + '?')) {
-    data.chartOfAccounts = data.chartOfAccounts.filter(a => a.code !== code);
-    saveData(); renderCOA();
-  }
-}
-
-// ============ JOURNAL RENDERERS ============
-function renderPJ() {
-  const totals = data.purchaseJournal.reduce((s,e) => ({merch:s.merch+e.merch, other:s.other+e.other, vat:s.vat+e.inputVAT, ap:s.ap+e.ap}), {merch:0,other:0,vat:0,ap:0});
-  const rows = data.purchaseJournal.map((e,i) => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-3 py-2 text-xs">${e.date}</td>
-      <td class="px-3 py-2 font-mono text-xs">${e.ref}</td>
-      <td class="px-3 py-2 text-xs">${e.supplier}</td>
-      <td class="px-3 py-2 text-xs text-slate-500">${e.desc}</td>
-      <td class="px-3 py-2 font-mono text-xs">${e.acct}</td>
-      <td class="px-3 py-2 text-xs">${e.title}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${e.merch?fmt(e.merch):'-'}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${e.other?fmt(e.other):'-'}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${fmt(e.inputVAT)}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${fmt(e.ap)}</td>
-      <td class="px-3 py-2 text-xs">${e.terms}</td>
-      <td class="px-3 py-2 text-center"><button onclick="deletePJ(${i})" class="text-red-500">🗑️</button></td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div><h3 class="font-bold">Purchase Journal</h3><p class="text-xs text-slate-500">For the Month of January 2026 · All purchases on account</p></div>
-        <button onclick="openPJModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">+ New Entry</button>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-3 py-2 text-left">Date</th>
-              <th class="px-3 py-2 text-left">Ref</th>
-              <th class="px-3 py-2 text-left">Supplier</th>
-              <th class="px-3 py-2 text-left">Description</th>
-              <th class="px-3 py-2 text-left">Acct</th>
-              <th class="px-3 py-2 text-left">Account Title</th>
-              <th class="px-3 py-2 text-right">Merch Dr</th>
-              <th class="px-3 py-2 text-right">Other Exp Dr</th>
-              <th class="px-3 py-2 text-right">Input VAT Dr</th>
-              <th class="px-3 py-2 text-right">AP Cr</th>
-              <th class="px-3 py-2 text-left">Terms</th>
-              <th class="px-3 py-2 text-center">Act</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-            <tr class="bg-slate-100 font-bold">
-              <td colspan="6" class="px-3 py-2 text-right">TOTALS</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.merch)}</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.other)}</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.vat)}</td>
-              <td class="px-3 py-2 text-right cr">${fmt(totals.ap)}</td>
-              <td colspan="2"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-function openPJModal() {
-  const acctOptions = data.chartOfAccounts.map(a => `<option value="${a.code}">${a.code} - ${a.title}</option>`).join('');
-  document.getElementById('modalTitle').textContent = 'Add Purchase Journal Entry';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-xs font-semibold">Date</label><input type="date" id="pj_date" value="2026-01-15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Ref No.</label><input id="pj_ref" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="PJ-008"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Supplier</label><input id="pj_supplier" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Description</label><input id="pj_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Account Debited</label><select id="pj_acct" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">${acctOptions}</select></div>
-      <div><label class="text-xs font-semibold">Merchandise (Dr)</label><input type="number" id="pj_merch" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Other Expense (Dr)</label><input type="number" id="pj_other" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Input VAT (Dr)</label><input type="number" id="pj_vat" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Terms</label><input id="pj_terms" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="n/30"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="savePJ()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Entry</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function savePJ() {
-  const merch = +document.getElementById('pj_merch').value || 0;
-  const other = +document.getElementById('pj_other').value || 0;
-  const vat = +document.getElementById('pj_vat').value || 0;
-  const acct = document.getElementById('pj_acct').value;
-  const title = getAccount(acct).title;
-  data.purchaseJournal.push({
-    date: document.getElementById('pj_date').value,
-    ref: document.getElementById('pj_ref').value,
-    supplier: document.getElementById('pj_supplier').value,
-    desc: document.getElementById('pj_desc').value,
-    acct, title, merch, other, inputVAT: vat,
-    ap: merch + other + vat,
-    terms: document.getElementById('pj_terms').value,
-    posted: true
-  });
-  saveData(); closeModal(); renderPJ();
-}
-function deletePJ(i) { if(confirm('Delete entry?')){data.purchaseJournal.splice(i,1);saveData();renderPJ();} }
-
-function renderCDJ() {
-  const totals = data.cdj.reduce((s,e) => ({ap:s.ap+e.ap, other:s.other+e.other, vat:s.vat+e.inputVAT, pdisc:s.pdisc+e.pdisc, cash:s.cash+e.cash, ewt:s.ewt+e.ewt}), {ap:0,other:0,vat:0,pdisc:0,cash:0,ewt:0});
-  const rows = data.cdj.map((e,i) => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-2 py-2 text-xs">${e.date}</td>
-      <td class="px-2 py-2 font-mono text-xs">${e.ref}</td>
-      <td class="px-2 py-2 text-xs">${e.payee}</td>
-      <td class="px-2 py-2 text-xs text-slate-500">${e.desc}</td>
-      <td class="px-2 py-2 font-mono text-xs">${e.acct}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${e.ap?fmt(e.ap):'-'}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${e.other?fmt(e.other):'-'}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${e.inputVAT?fmt(e.inputVAT):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.pdisc?fmt(e.pdisc):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${fmt(e.cash)}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.ewt?fmt(e.ewt):'-'}</td>
-      <td class="px-2 py-2 text-xs">${e.bank}</td>
-      <td class="px-2 py-2 text-center"><button onclick="deleteCDJ(${i})" class="text-red-500">🗑️</button></td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div><h3 class="font-bold">Cash Disbursement Journal</h3><p class="text-xs text-slate-500">All cash payments (check, online transfer, cash)</p></div>
-        <button onclick="openCDJModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ New Entry</button>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-2 py-2 text-left">Date</th>
-              <th class="px-2 py-2 text-left">Check/Ref</th>
-              <th class="px-2 py-2 text-left">Payee</th>
-              <th class="px-2 py-2 text-left">Description</th>
-              <th class="px-2 py-2 text-left">Acct</th>
-              <th class="px-2 py-2 text-right">AP Dr</th>
-              <th class="px-2 py-2 text-right">Other Dr</th>
-              <th class="px-2 py-2 text-right">VAT Dr</th>
-              <th class="px-2 py-2 text-right">PD Cr</th>
-              <th class="px-2 py-2 text-right">Cash Cr</th>
-              <th class="px-2 py-2 text-right">EWT Cr</th>
-              <th class="px-2 py-2 text-left">Bank</th>
-              <th class="px-2 py-2">Act</th>
-            </tr>
-          </thead>
-          <tbody>${rows}
-            <tr class="bg-slate-100 font-bold">
-              <td colspan="5" class="px-2 py-2 text-right">TOTALS</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.ap)}</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.other)}</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.vat)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.pdisc)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.cash)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.ewt)}</td>
-              <td colspan="2"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-function openCDJModal() {
-  const acctOptions = data.chartOfAccounts.map(a => `<option value="${a.code}">${a.code} - ${a.title}</option>`).join('');
-  document.getElementById('modalTitle').textContent = 'Add Cash Disbursement Entry';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-xs font-semibold">Date</label><input type="date" id="cdj_date" value="2026-01-15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Check/Ref No.</label><input id="cdj_ref" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="CHK-1008"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Payee</label><input id="cdj_payee" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Description</label><input id="cdj_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Account Debited</label><select id="cdj_acct" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">${acctOptions}</select></div>
-      <div><label class="text-xs font-semibold">AP Dr</label><input type="number" id="cdj_ap" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Other Exp Dr</label><input type="number" id="cdj_other" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Input VAT Dr</label><input type="number" id="cdj_vat" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Purchase Disc Cr</label><input type="number" id="cdj_pd" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Cash Cr</label><input type="number" id="cdj_cash" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">EWT Cr</label><input type="number" id="cdj_ewt" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Bank</label><select id="cdj_bank" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option>BDO</option><option>BPI</option><option>Cash</option></select></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="saveCDJ()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Entry</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function saveCDJ() {
-  const acct = document.getElementById('cdj_acct').value;
-  data.cdj.push({
-    date: document.getElementById('cdj_date').value,
-    ref: document.getElementById('cdj_ref').value,
-    payee: document.getElementById('cdj_payee').value,
-    desc: document.getElementById('cdj_desc').value,
-    acct, title: getAccount(acct).title,
-    ap: +document.getElementById('cdj_ap').value||0,
-    other: +document.getElementById('cdj_other').value||0,
-    inputVAT: +document.getElementById('cdj_vat').value||0,
-    pdisc: +document.getElementById('cdj_pd').value||0,
-    cash: +document.getElementById('cdj_cash').value||0,
-    ewt: +document.getElementById('cdj_ewt').value||0,
-    bank: document.getElementById('cdj_bank').value,
-    posted: true
-  });
-  saveData(); closeModal(); renderCDJ();
-}
-function deleteCDJ(i) { if(confirm('Delete entry?')){data.cdj.splice(i,1);saveData();renderCDJ();} }
-
-function renderSJ() {
-  const totals = data.salesJournal.reduce((s,e) => ({ar:s.ar+e.ar, sales:s.sales+e.sales, vat:s.vat+e.outputVAT, cogs:s.cogs+e.cogs, inv:s.inv+e.inv}), {ar:0,sales:0,vat:0,cogs:0,inv:0});
-  const rows = data.salesJournal.map((e,i) => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-3 py-2 text-xs">${e.date}</td>
-      <td class="px-3 py-2 font-mono text-xs">${e.ref}</td>
-      <td class="px-3 py-2 text-xs">${e.customer}</td>
-      <td class="px-3 py-2 text-xs text-slate-500">${e.desc}</td>
-      <td class="px-3 py-2 text-xs">${e.terms}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${fmt(e.ar)}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${fmt(e.sales)}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${fmt(e.outputVAT)}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${fmt(e.cogs)}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${fmt(e.inv)}</td>
-      <td class="px-3 py-2 text-center"><button onclick="deleteSJ(${i})" class="text-red-500">🗑️</button></td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div><h3 class="font-bold">Sales Journal</h3><p class="text-xs text-slate-500">Credit sales only · Perpetual inventory COGS</p></div>
-        <button onclick="openSJModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ New Entry</button>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-3 py-2 text-left">Date</th>
-              <th class="px-3 py-2 text-left">Invoice</th>
-              <th class="px-3 py-2 text-left">Customer</th>
-              <th class="px-3 py-2 text-left">Description</th>
-              <th class="px-3 py-2 text-left">Terms</th>
-              <th class="px-3 py-2 text-right">AR Dr</th>
-              <th class="px-3 py-2 text-right">Sales Cr</th>
-              <th class="px-3 py-2 text-right">Output VAT Cr</th>
-              <th class="px-3 py-2 text-right">COGS Dr</th>
-              <th class="px-3 py-2 text-right">Inv Cr</th>
-              <th class="px-3 py-2">Act</th>
-            </tr>
-          </thead>
-          <tbody>${rows}
-            <tr class="bg-slate-100 font-bold">
-              <td colspan="5" class="px-3 py-2 text-right">TOTALS</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.ar)}</td>
-              <td class="px-3 py-2 text-right cr">${fmt(totals.sales)}</td>
-              <td class="px-3 py-2 text-right cr">${fmt(totals.vat)}</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.cogs)}</td>
-              <td class="px-3 py-2 text-right cr">${fmt(totals.inv)}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-function openSJModal() {
-  document.getElementById('modalTitle').textContent = 'Add Sales Journal Entry';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-xs font-semibold">Date</label><input type="date" id="sj_date" value="2026-01-15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Invoice No.</label><input id="sj_ref" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="SI-2026-008"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Customer</label><input id="sj_customer" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Description</label><input id="sj_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Terms</label><input id="sj_terms" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="n/30"></div>
-      <div><label class="text-xs font-semibold">Sales Amount (excl. VAT)</label><input type="number" id="sj_sales" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">COGS (at cost)</label><input type="number" id="sj_cogs" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="saveSJ()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Entry</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function saveSJ() {
-  const sales = +document.getElementById('sj_sales').value||0;
-  const cogs = +document.getElementById('sj_cogs').value||0;
-  const vat = sales * 0.12;
-  data.salesJournal.push({
-    date: document.getElementById('sj_date').value,
-    ref: document.getElementById('sj_ref').value,
-    customer: document.getElementById('sj_customer').value,
-    desc: document.getElementById('sj_desc').value,
-    terms: document.getElementById('sj_terms').value,
-    ar: sales + vat, sales, outputVAT: vat, cogs, inv: cogs, posted: true
-  });
-  saveData(); closeModal(); renderSJ();
-}
-function deleteSJ(i) { if(confirm('Delete entry?')){data.salesJournal.splice(i,1);saveData();renderSJ();} }
-
-function renderCRJ() {
-  const totals = data.crj.reduce((s,e) => ({cash:s.cash+e.cash, sdisc:s.sdisc+e.sdisc, ar:s.ar+e.ar, sales:s.sales+e.sales, vat:s.vat+e.outputVAT, other:s.other+e.other, cogs:s.cogs+e.cogs, inv:s.inv+e.inv}), {cash:0,sdisc:0,ar:0,sales:0,vat:0,other:0,cogs:0,inv:0});
-  const rows = data.crj.map((e,i) => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-2 py-2 text-xs">${e.date}</td>
-      <td class="px-2 py-2 font-mono text-xs">${e.ref}</td>
-      <td class="px-2 py-2 text-xs">${e.from}</td>
-      <td class="px-2 py-2 text-xs text-slate-500">${e.desc}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${fmt(e.cash)}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${e.sdisc?fmt(e.sdisc):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.ar?fmt(e.ar):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.sales?fmt(e.sales):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.outputVAT?fmt(e.outputVAT):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.other?fmt(e.other):'-'}</td>
-      <td class="px-2 py-2 text-right dr text-xs">${e.cogs?fmt(e.cogs):'-'}</td>
-      <td class="px-2 py-2 text-right cr text-xs">${e.inv?fmt(e.inv):'-'}</td>
-      <td class="px-2 py-2 text-center"><button onclick="deleteCRJ(${i})" class="text-red-500">🗑️</button></td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div><h3 class="font-bold">Cash Receipts Journal</h3><p class="text-xs text-slate-500">Cash collections, cash sales, other receipts</p></div>
-        <button onclick="openCRJModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ New Entry</button>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-2 py-2 text-left">Date</th>
-              <th class="px-2 py-2 text-left">OR/Ref</th>
-              <th class="px-2 py-2 text-left">From</th>
-              <th class="px-2 py-2 text-left">Description</th>
-              <th class="px-2 py-2 text-right">Cash Dr</th>
-              <th class="px-2 py-2 text-right">SDisc Dr</th>
-              <th class="px-2 py-2 text-right">AR Cr</th>
-              <th class="px-2 py-2 text-right">Sales Cr</th>
-              <th class="px-2 py-2 text-right">VAT Cr</th>
-              <th class="px-2 py-2 text-right">Other Cr</th>
-              <th class="px-2 py-2 text-right">COGS Dr</th>
-              <th class="px-2 py-2 text-right">Inv Cr</th>
-              <th class="px-2 py-2">Act</th>
-            </tr>
-          </thead>
-          <tbody>${rows}
-            <tr class="bg-slate-100 font-bold">
-              <td colspan="4" class="px-2 py-2 text-right">TOTALS</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.cash)}</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.sdisc)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.ar)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.sales)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.vat)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.other)}</td>
-              <td class="px-2 py-2 text-right dr">${fmt(totals.cogs)}</td>
-              <td class="px-2 py-2 text-right cr">${fmt(totals.inv)}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-function openCRJModal() {
-  document.getElementById('modalTitle').textContent = 'Add Cash Receipts Entry';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-xs font-semibold">Date</label><input type="date" id="crj_date" value="2026-01-15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">OR/Ref No.</label><input id="crj_ref" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="OR-0009"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Received From</label><input id="crj_from" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Description</label><input id="crj_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Cash Dr</label><input type="number" id="crj_cash" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Sales Discount Dr</label><input type="number" id="crj_sdisc" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">AR Cr (collection)</label><input type="number" id="crj_ar" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Sales Cr (cash sale)</label><input type="number" id="crj_sales" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Other Income Cr</label><input type="number" id="crj_other" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">COGS Dr (cash sale)</label><input type="number" id="crj_cogs" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="saveCRJ()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Entry</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function saveCRJ() {
-  const sales = +document.getElementById('crj_sales').value||0;
-  const cogs = +document.getElementById('crj_cogs').value||0;
-  data.crj.push({
-    date: document.getElementById('crj_date').value,
-    ref: document.getElementById('crj_ref').value,
-    from: document.getElementById('crj_from').value,
-    desc: document.getElementById('crj_desc').value,
-    cash: +document.getElementById('crj_cash').value||0,
-    sdisc: +document.getElementById('crj_sdisc').value||0,
-    ar: +document.getElementById('crj_ar').value||0,
-    sales, outputVAT: sales*0.12,
-    other: +document.getElementById('crj_other').value||0,
-    cogs, inv: cogs, posted: true
-  });
-  saveData(); closeModal(); renderCRJ();
-}
-function deleteCRJ(i) { if(confirm('Delete entry?')){data.crj.splice(i,1);saveData();renderCRJ();} }
-
-function renderGJ() {
-  const totals = data.generalJournal.reduce((s,e) => ({dr:s.dr+e.dr, cr:s.cr+e.cr}), {dr:0,cr:0});
-  const rows = data.generalJournal.map((e,i) => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-3 py-2 text-xs">${e.date}</td>
-      <td class="px-3 py-2 font-mono text-xs">${e.ref}</td>
-      <td class="px-3 py-2 font-mono text-xs">${e.acct}</td>
-      <td class="px-3 py-2 text-xs">${e.title}</td>
-      <td class="px-3 py-2 text-xs text-slate-500">${e.desc}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${e.dr?fmt(e.dr):''}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${e.cr?fmt(e.cr):''}</td>
-      <td class="px-3 py-2 text-center"><button onclick="deleteGJ(${i})" class="text-red-500">🗑️</button></td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div><h3 class="font-bold">General Journal</h3><p class="text-xs text-slate-500">Opening balances, adjusting, and correcting entries</p></div>
-        <button onclick="openGJModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ New Entry</button>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-3 py-2 text-left">Date</th>
-              <th class="px-3 py-2 text-left">Entry No.</th>
-              <th class="px-3 py-2 text-left">Acct Code</th>
-              <th class="px-3 py-2 text-left">Account Title</th>
-              <th class="px-3 py-2 text-left">Description</th>
-              <th class="px-3 py-2 text-right">Debit</th>
-              <th class="px-3 py-2 text-right">Credit</th>
-              <th class="px-3 py-2">Act</th>
-            </tr>
-          </thead>
-          <tbody>${rows}
-            <tr class="bg-slate-100 font-bold">
-              <td colspan="5" class="px-3 py-2 text-right">TOTALS</td>
-              <td class="px-3 py-2 text-right dr">${fmt(totals.dr)}</td>
-              <td class="px-3 py-2 text-right cr">${fmt(totals.cr)}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-function openGJModal() {
-  const acctOptions = data.chartOfAccounts.map(a => `<option value="${a.code}">${a.code} - ${a.title}</option>`).join('');
-  document.getElementById('modalTitle').textContent = 'Add General Journal Entry';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-xs font-semibold">Date</label><input type="date" id="gj_date" value="2026-01-31" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Entry No.</label><input id="gj_ref" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="GJ-006"></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Account</label><select id="gj_acct" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">${acctOptions}</select></div>
-      <div class="col-span-2"><label class="text-xs font-semibold">Description</label><input id="gj_desc" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Debit</label><input type="number" id="gj_dr" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-      <div><label class="text-xs font-semibold">Credit</label><input type="number" id="gj_cr" value="0" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"></div>
-    </div>
-    <div class="flex justify-end gap-2 mt-6">
-      <button onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-      <button onclick="saveGJ()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Save Entry</button>
-    </div>
-  `;
-  document.getElementById('modal').classList.remove('hidden');
-}
-function saveGJ() {
-  const acct = document.getElementById('gj_acct').value;
-  data.generalJournal.push({
-    date: document.getElementById('gj_date').value,
-    ref: document.getElementById('gj_ref').value,
-    acct, title: getAccount(acct).title,
-    desc: document.getElementById('gj_desc').value,
-    dr: +document.getElementById('gj_dr').value||0,
-    cr: +document.getElementById('gj_cr').value||0,
-    posted: true
-  });
-  saveData(); closeModal(); renderGJ();
-}
-function deleteGJ(i) { if(confirm('Delete entry?')){data.generalJournal.splice(i,1);saveData();renderGJ();} }
-
-// ============ GENERAL LEDGER ============
-function renderGL() {
-  const gl = computeGeneralLedger();
-  const rows = Object.values(gl).filter(a => a.openingDr||a.openingCr||a.periodDr||a.periodCr||a.endingDr||a.endingCr).map(a => `
-    <tr class="table-row border-b border-slate-100">
-      <td class="px-3 py-2 font-mono text-xs">${a.code}</td>
-      <td class="px-3 py-2 text-xs">${a.title}</td>
-      <td class="px-3 py-2"><span class="badge ${typeBadge(a.type)}">${a.type}</span></td>
-      <td class="px-3 py-2 text-right text-xs">${a.openingDr?fmt(a.openingDr):''}</td>
-      <td class="px-3 py-2 text-right text-xs">${a.openingCr?fmt(a.openingCr):''}</td>
-      <td class="px-3 py-2 text-right dr text-xs">${a.periodDr?fmt(a.periodDr):''}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${a.periodCr?fmt(a.periodCr):''}</td>
-      <td class="px-3 py-2 text-right dr text-xs font-semibold">${a.endingDr?fmt(a.endingDr):''}</td>
-      <td class="px-3 py-2 text-right cr text-xs font-semibold">${a.endingCr?fmt(a.endingCr):''}</td>
-    </tr>`).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h3 class="font-bold">General Ledger</h3>
-        <p class="text-xs text-slate-500">As of January 31, 2026 · Auto-computed from all journals</p>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-3 py-2 text-left">Code</th>
-              <th class="px-3 py-2 text-left">Account Title</th>
-              <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-right">Opening Dr</th>
-              <th class="px-3 py-2 text-right">Opening Cr</th>
-              <th class="px-3 py-2 text-right">Period Dr</th>
-              <th class="px-3 py-2 text-right">Period Cr</th>
-              <th class="px-3 py-2 text-right">Ending Dr</th>
-              <th class="px-3 py-2 text-right">Ending Cr</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-// ============ TRIAL BALANCE ============
-function renderTB() {
-  const tb = computeTrialBalance();
-  let totalDr = 0, totalCr = 0;
-  const rows = tb.map(a => {
-    totalDr += a.endingDr; totalCr += a.endingCr;
-    return `<tr class="table-row border-b border-slate-100">
-      <td class="px-3 py-2 font-mono text-xs">${a.code}</td>
-      <td class="px-3 py-2 text-xs">${a.title}</td>
-      <td class="px-3 py-2"><span class="badge ${typeBadge(a.type)}">${a.type}</span></td>
-      <td class="px-3 py-2 text-right dr text-xs">${a.endingDr?fmt(a.endingDr):''}</td>
-      <td class="px-3 py-2 text-right cr text-xs">${a.endingCr?fmt(a.endingCr):''}</td>
-    </tr>`;
-  }).join('');
-  
-  const diff = totalDr - totalCr;
-  const balanced = Math.abs(diff) < 0.01;
-  
-  document.getElementById('content').innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-        <div>
-          <h3 class="font-bold">Trial Balance</h3>
-          <p class="text-xs text-slate-500">ABC Trading Corp. · As of January 31, 2026</p>
-        </div>
-        <div class="px-4 py-2 rounded-lg ${balanced?'bg-green-50 border border-green-200':'bg-red-50 border border-red-200'}">
-          <p class="text-xs font-semibold ${balanced?'text-green-700':'text-red-700'}">${balanced?'✓ BALANCED':'✗ UNBALANCED'}</p>
-          <p class="text-xs ${balanced?'text-green-600':'text-red-600'}">Difference: ${fmt(Math.abs(diff))}</p>
-        </div>
-      </div>
-      <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-600 sticky top-0">
-            <tr>
-              <th class="px-3 py-2 text-left">Code</th>
-              <th class="px-3 py-2 text-left">Account Title</th>
-              <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-right">Debit</th>
-              <th class="px-3 py-2 text-right">Credit</th>
-            </tr>
-          </thead>
-          <tbody>${rows}
-            <tr class="bg-slate-800 text-white font-bold">
-              <td colspan="3" class="px-3 py-3 text-right">TOTALS</td>
-              <td class="px-3 py-3 text-right">${fmt(totalDr)}</td>
-              <td class="px-3 py-3 text-right">${fmt(totalCr)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-// ============ INCOME STATEMENT ============
-function renderIS() {
-  const is = computeIncomeStatement();
-  const grossProfit = is.totalRevenue - (computeGeneralLedger()['5000']?.endingDr||0);
-  
-  document.getElementById('content').innerHTML = `
-    <div class="max-w-4xl mx-auto">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-8 border-b border-slate-200 text-center">
-          <h3 class="text-xl font-bold text-slate-800">ABC TRADING CORP.</h3>
-          <p class="text-sm text-slate-600 mt-1">STATEMENT OF COMPREHENSIVE INCOME</p>
-          <p class="text-xs text-slate-500">For the Month Ended January 31, 2026</p>
-          <p class="text-xs text-slate-400">(Amounts in Philippine Peso)</p>
-        </div>
-        <div class="p-8 space-y-1 text-sm">
-          <div class="font-bold text-slate-700 mb-2">REVENUE</div>
-          ${is.income.filter(a=>a.endingCr>0).map(a => `
-            <div class="flex justify-between py-1 pl-4">
-              <span>${a.title}</span>
-              <span class="font-mono">${fmt(a.endingCr - a.endingDr)}</span>
-            </div>`).join('')}
-          <div class="flex justify-between py-2 border-t border-slate-300 font-bold mt-2">
-            <span>Total Revenue</span>
-            <span class="font-mono text-green-700">${fmt(is.totalRevenue)}</span>
-          </div>
-          
-          <div class="font-bold text-slate-700 mb-2 mt-6">COST OF SALES</div>
-          <div class="flex justify-between py-1 pl-4">
-            <span>Cost of Goods Sold</span>
-            <span class="font-mono">(${fmt(computeGeneralLedger()['5000']?.endingDr||0)})</span>
-          </div>
-          <div class="flex justify-between py-2 border-t border-slate-300 font-bold mt-2">
-            <span>GROSS PROFIT</span>
-            <span class="font-mono text-blue-700">${fmt(grossProfit)}</span>
-          </div>
-          
-          <div class="font-bold text-slate-700 mb-2 mt-6">OPERATING EXPENSES</div>
-          ${is.expense.filter(a=>a.endingDr>0 && a.code!=='5000').map(a => `
-            <div class="flex justify-between py-1 pl-4">
-              <span>${a.title}</span>
-              <span class="font-mono">(${fmt(a.endingDr - a.endingCr)})</span>
-            </div>`).join('')}
-          <div class="flex justify-between py-2 border-t border-slate-300 font-bold mt-2">
-            <span>Total Operating Expenses</span>
-            <span class="font-mono text-red-700">(${fmt(is.totalExpenses - (computeGeneralLedger()['5000']?.endingDr||0))})</span>
-          </div>
-          
-          <div class="flex justify-between py-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 rounded-lg mt-4 border-2 border-blue-600">
-            <span class="text-lg font-bold">NET INCOME</span>
-            <span class="font-mono text-lg font-bold ${is.netIncome>=0?'text-green-700':'text-red-700'}">${fmt(is.netIncome)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ============ BALANCE SHEET ============
-function renderBS() {
-  const gl = computeGeneralLedger();
-  const accounts = Object.values(gl);
-  const assets = accounts.filter(a => a.type.startsWith('Asset'));
-  const liabilities = accounts.filter(a => a.type === 'Liability');
-  const equity = accounts.filter(a => a.type.startsWith('Equity'));
-  const is = computeIncomeStatement();
-  
-  const totalAssets = assets.reduce((s,a) => s + (a.endingDr - a.endingCr), 0);
-  const totalLiabilities = liabilities.reduce((s,a) => s + (a.endingCr - a.endingDr), 0);
-  const totalEquity = equity.reduce((s,a) => s + (a.endingCr - a.endingDr), 0) + is.netIncome;
-  
-  const renderGroup = (items, isContra=false) => items.filter(a => a.endingDr||a.endingCr).map(a => {
-    const val = a.type.includes('Contra') ? (a.endingDr - a.endingCr) : (a.endingDr - a.endingCr);
-    return `<div class="flex justify-between py-1 pl-4"><span>${a.title}</span><span class="font-mono">${fmt(Math.abs(val))}</span></div>`;
-  }).join('');
-  
-  document.getElementById('content').innerHTML = `
-    <div class="max-w-4xl mx-auto">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-8 border-b border-slate-200 text-center">
-          <h3 class="text-xl font-bold text-slate-800">ABC TRADING CORP.</h3>
-          <p class="text-sm text-slate-600 mt-1">STATEMENT OF FINANCIAL POSITION</p>
-          <p class="text-xs text-slate-500">As of January 31, 2026</p>
-          <p class="text-xs text-slate-400">(Amounts in Philippine Peso)</p>
-        </div>
-        <div class="p-8 text-sm">
-          <div class="font-bold text-slate-700 mb-2">ASSETS</div>
-          <div class="font-semibold text-xs text-slate-600 mt-2">Current Assets</div>
-          ${renderGroup(assets.filter(a => ['1000','1010','1020','1100','1110','1200','1300','1400','1500'].includes(a.code)))}
-          <div class="font-semibold text-xs text-slate-600 mt-3">Non-Current Assets</div>
-          ${renderGroup(assets.filter(a => ['1600','1610'].includes(a.code)))}
-          <div class="flex justify-between py-2 border-t-2 border-slate-400 font-bold mt-2">
-            <span>TOTAL ASSETS</span>
-            <span class="font-mono text-blue-700">${fmt(totalAssets)}</span>
-          </div>
-          
-          <div class="font-bold text-slate-700 mb-2 mt-6">LIABILITIES</div>
-          ${renderGroup(liabilities)}
-          <div class="flex justify-between py-2 border-t border-slate-300 font-semibold mt-2">
-            <span>Total Liabilities</span>
-            <span class="font-mono">${fmt(totalLiabilities)}</span>
-          </div>
-          
-          <div class="font-bold text-slate-700 mb-2 mt-4">EQUITY</div>
-          ${renderGroup(equity)}
-          <div class="flex justify-between py-1 pl-4"><span>Net Income for the Period</span><span class="font-mono">${fmt(is.netIncome)}</span></div>
-          <div class="flex justify-between py-2 border-t border-slate-300 font-semibold mt-2">
-            <span>Total Equity</span>
-            <span class="font-mono">${fmt(totalEquity)}</span>
-          </div>
-          
-          <div class="flex justify-between py-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 rounded-lg mt-4 border-2 border-blue-600">
-            <span class="text-lg font-bold">TOTAL LIABILITIES & EQUITY</span>
-            <span class="font-mono text-lg font-bold text-blue-700">${fmt(totalLiabilities + totalEquity)}</span>
-          </div>
-          
-          <div class="mt-4 text-center text-xs ${Math.abs(totalAssets - (totalLiabilities+totalEquity))<1?'text-green-600':'text-red-600'}">
-            ${Math.abs(totalAssets - (totalLiabilities+totalEquity))<1 ? '✓ Balance Sheet is balanced' : '✗ Difference: ' + fmt(totalAssets - (totalLiabilities+totalEquity))}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ============ VAT SUMMARY ============
-function renderVAT() {
-  const gl = computeGeneralLedger();
-  const outputVAT = gl['2100']?.endingCr||0;
-  const inputVAT = gl['1300']?.endingDr||0;
-  const netVAT = outputVAT - inputVAT;
-  
-  document.getElementById('content').innerHTML = `
-    <div class="max-w-5xl mx-auto">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-        <div class="p-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-          <h3 class="text-xl font-bold">BIR Form 2550M / 2550Q Support</h3>
-          <p class="text-sm opacity-90 mt-1">Value Added Tax (VAT) Return Preparation · ${data.company.rdo}</p>
-          <p class="text-xs opacity-75 mt-1">TIN: ${data.company.tin} · Period: ${data.company.period}</p>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-2 gap-6">
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p class="text-xs font-semibold text-red-700 uppercase">Output VAT (Sales)</p>
-              <p class="text-2xl font-bold text-red-700 mt-2">${fmt(outputVAT)}</p>
-              <p class="text-xs text-red-600 mt-1">12% VAT on sales (Credit)</p>
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm">
+            <h2 id="page-title" class="text-lg font-semibold text-gray-800">Dashboard</h2>
+            <div class="flex gap-2">
+                <button onclick="exportCSV()" class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded text-gray-700"><i class="fas fa-file-csv mr-1"></i> Export CSV</button>
+                <button onclick="resetDemo()" class="px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 rounded text-red-600"><i class="fas fa-sync mr-1"></i> Reset Demo</button>
             </div>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p class="text-xs font-semibold text-green-700 uppercase">Input VAT (Purchases)</p>
-              <p class="text-2xl font-bold text-green-700 mt-2">${fmt(inputVAT)}</p>
-              <p class="text-xs text-green-600 mt-1">12% VAT on purchases (Debit)</p>
-            </div>
-          </div>
-          <div class="mt-6 p-4 ${netVAT>=0?'bg-blue-50 border-blue-200':'bg-amber-50 border-amber-200'} border rounded-lg">
-            <p class="text-xs font-semibold uppercase ${netVAT>=0?'text-blue-700':'text-amber-700'}">Net VAT ${netVAT>=0?'Payable to BIR':'Creditable / Refundable'}</p>
-            <p class="text-3xl font-bold mt-2 ${netVAT>=0?'text-blue-700':'text-amber-700'}">${fmt(Math.abs(netVAT))}</p>
-          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- DASHBOARD -->
+            <section id="module-dashboard" class="module-section active">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100"><p class="text-sm text-gray-500">Total Assets</p><p id="stat-assets" class="text-2xl font-bold text-green-600">₱ 0.00</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100"><p class="text-sm text-gray-500">Total Liabilities</p><p id="stat-liabilities" class="text-2xl font-bold text-red-600">₱ 0.00</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100"><p class="text-sm text-gray-500">Total Equity</p><p id="stat-equity" class="text-2xl font-bold text-blue-600">₱ 0.00</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100"><p class="text-sm text-gray-500">Net Income</p><p id="stat-income" class="text-2xl font-bold text-indigo-600">₱ 0.00</p></div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                    <h3 class="font-semibold mb-3">Recent Transactions</h3>
+                    <div id="recent-tx" class="text-sm text-gray-500">Syncing...</div>
+                </div>
+            </section>
+
+            <!-- JOURNALS & COA -->
+            <section id="module-coa" class="module-section">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Chart of Accounts</h3>
+                    <button onclick="openModal('coa')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Account</button>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Code</th><th class="p-3 text-left">Account Name</th><th class="p-3 text-left">Type</th><th class="p-3 text-left">Normal Balance</th><th class="p-3 text-right">Beg. Balance</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-coa" class="divide-y divide-gray-100"></tbody></table>
+                </div>
+            </section>
+
+            <section id="module-pj" class="module-section">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Purchase Journal</h3><button onclick="openModal('pj')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Entry</button></div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Reference</th><th class="p-3 text-left">Supplier</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-pj" class="divide-y divide-gray-100"></tbody></table></div>
+            </section>
+
+            <section id="module-cd" class="module-section">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Cash Disbursement</h3><button onclick="openModal('cd')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Entry</button></div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Check No</th><th class="p-3 text-left">Payee</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-cd" class="divide-y divide-gray-100"></tbody></table></div>
+            </section>
+
+            <section id="module-sj" class="module-section">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Sales Journal</h3><button onclick="openModal('sj')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Entry</button></div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Invoice No</th><th class="p-3 text-left">Customer</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-sj" class="divide-y divide-gray-100"></tbody></table></div>
+            </section>
+
+            <section id="module-cr" class="module-section">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Cash Receipts</h3><button onclick="openModal('cr')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Entry</button></div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">OR No</th><th class="p-3 text-left">Customer</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Amount</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-cr" class="divide-y divide-gray-100"></tbody></table></div>
+            </section>
+
+            <section id="module-gj" class="module-section">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">General Journal</h3><button onclick="openModal('gj')" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Add Entry</button></div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Reference</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Debit</th><th class="p-3 text-right">Credit</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="tbl-gj" class="divide-y divide-gray-100"></tbody></table></div>
+            </section>
+
+            <!-- REPORTS -->
+            <section id="module-gl" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">General Ledger</h3>
+                <div id="gl-container" class="space-y-4"></div>
+            </section>
+
+            <section id="module-tb" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">Trial Balance</h3>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Code</th><th class="p-3 text-left">Account Name</th><th class="p-3 text-right">Debit</th><th class="p-3 text-right">Credit</th></tr></thead><tbody id="tbl-tb" class="divide-y divide-gray-100"></tbody>
+                    <tfoot class="bg-gray-50 font-bold"><tr><td class="p-3" colspan="2">TOTAL</td><td id="tb-dr" class="p-3 text-right">₱ 0.00</td><td id="tb-cr" class="p-3 text-right">₱ 0.00</td></tr></tfoot></table>
+                </div>
+            </section>
+
+            <section id="module-is" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">Income Statement</h3>
+                <div id="is-container" class="bg-white rounded-lg shadow-sm border border-gray-100 p-6"></div>
+            </section>
+
+            <section id="module-bs" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">Balance Sheet</h3>
+                <div id="bs-container" class="bg-white rounded-lg shadow-sm border border-gray-100 p-6"></div>
+            </section>
+
+            <section id="module-vat" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">VAT Summary (2550M/Q)</h3>
+                <div id="vat-container" class="bg-white rounded-lg shadow-sm border border-gray-100 p-6"></div>
+            </section>
+
+            <section id="module-ewt" class="module-section">
+                <h3 class="text-lg font-semibold mb-4">EWT Tracking</h3>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-sm"><thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Ref</th><th class="p-3 text-left">Payee</th><th class="p-3 text-left">Account</th><th class="p-3 text-right">Base</th><th class="p-3 text-right">EWT (1%)</th></tr></thead><tbody id="tbl-ewt" class="divide-y divide-gray-100"></tbody>
+                    <tfoot class="bg-gray-50 font-bold"><tr><td class="p-3" colspan="4">TOTAL</td><td id="ewt-base" class="p-3 text-right">₱ 0.00</td><td id="ewt-tax" class="p-3 text-right">₱ 0.00</td></tr></tfoot></table>
+                </div>
+            </section>
         </div>
-      </div>
-      
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-200"><h3 class="font-bold">VAT Transaction Details</h3></div>
-        <div class="grid grid-cols-2 gap-4 p-4">
-          <div>
-            <h4 class="font-semibold text-sm text-slate-700 mb-2">Output VAT Sources (Sales)</h4>
-            <div class="space-y-1 text-xs">
-              <div class="flex justify-between py-1 border-b"><span>Sales Journal (Credit Sales)</span><span class="font-mono">${fmt(data.salesJournal.reduce((s,e)=>s+e.outputVAT,0))}</span></div>
-              <div class="flex justify-between py-1 border-b"><span>Cash Receipts Journal (Cash Sales)</span><span class="font-mono">${fmt(data.crj.reduce((s,e)=>s+e.outputVAT,0))}</span></div>
-              <div class="flex justify-between py-1 font-bold"><span>Total Output VAT</span><span class="font-mono">${fmt(outputVAT)}</span></div>
+    </main>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-lg font-semibold">Add Entry</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
-          </div>
-          <div>
-            <h4 class="font-semibold text-sm text-slate-700 mb-2">Input VAT Sources (Purchases)</h4>
-            <div class="space-y-1 text-xs">
-              <div class="flex justify-between py-1 border-b"><span>Purchase Journal</span><span class="font-mono">${fmt(data.purchaseJournal.reduce((s,e)=>s+e.inputVAT,0))}</span></div>
-              <div class="flex justify-between py-1 border-b"><span>Cash Disbursement Journal</span><span class="font-mono">${fmt(data.cdj.reduce((s,e)=>s+e.inputVAT,0))}</span></div>
-              <div class="flex justify-between py-1 font-bold"><span>Total Input VAT</span><span class="font-mono">${fmt(inputVAT)}</span></div>
-            </div>
-          </div>
+            <form id="modal-form" class="space-y-3">
+                <input type="hidden" id="f-module"><input type="hidden" id="f-id">
+                <div id="modal-fields"></div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 rounded text-gray-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+                </div>
+            </form>
         </div>
-      </div>
     </div>
-  `;
-}
+    <div id="toast-container" class="fixed bottom-4 right-4 space-y-2 z-50"></div>
 
-// ============ EWT TRACKING ============
-function renderEWT() {
-  const gl = computeGeneralLedger();
-  const ewtPaid = gl['2300']?.openingCr||0;
-  const ewtRemitted = data.cdj.filter(e => e.acct === '2300').reduce((s,e)=>s+e.cash,0);
-  
-  document.getElementById('content').innerHTML = `
-    <div class="max-w-5xl mx-auto">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-        <div class="p-6 bg-gradient-to-r from-purple-600 to-pink-700 text-white">
-          <h3 class="text-xl font-bold">Expanded Withholding Tax (EWT)</h3>
-          <p class="text-sm opacity-90 mt-1">BIR Form 0619E / 1601 tracking · ${data.company.period}</p>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-3 gap-4">
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <p class="text-xs font-semibold text-purple-700 uppercase">Opening EWT Payable</p>
-              <p class="text-2xl font-bold text-purple-700 mt-2">${fmt(ewtPaid)}</p>
-            </div>
-            <div class="bg-pink-50 border border-pink-200 rounded-lg p-4">
-              <p class="text-xs font-semibold text-pink-700 uppercase">EWT Remitted</p>
-              <p class="text-2xl font-bold text-pink-700 mt-2">${fmt(ewtRemitted)}</p>
-            </div>
-            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <p class="text-xs font-semibold text-indigo-700 uppercase">Ending Balance</p>
-              <p class="text-2xl font-bold text-indigo-700 mt-2">${fmt(gl['2300']?.endingCr||0)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-200"><h3 class="font-bold">EWT Rates Reference (Philippines)</h3></div>
-        <div class="p-4 text-sm">
-          <table class="w-full">
-            <thead class="bg-slate-50 text-xs uppercase text-slate-600">
-              <tr><th class="px-3 py-2 text-left">Type of Payment</th><th class="px-3 py-2 text-right">EWT Rate</th></tr>
-            </thead>
-            <tbody class="text-xs">
-              <tr class="border-b"><td class="px-3 py-2">Lease of goods (individual)</td><td class="px-3 py-2 text-right font-mono">5%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Lease of goods (corporation)</td><td class="px-3 py-2 text-right font-mono">1%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Professional fees</td><td class="px-3 py-2 text-right font-mono">5%/15%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Service fees (individual)</td><td class="px-3 py-2 text-right font-mono">2%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Service fees (corporation)</td><td class="px-3 py-2 text-right font-mono">1%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Commissions (individual)</td><td class="px-3 py-2 text-right font-mono">10%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Commissions (corporation)</td><td class="px-3 py-2 text-right font-mono">1%</td></tr>
-              <tr class="border-b"><td class="px-3 py-2">Purchase of goods (top 20K corp)</td><td class="px-3 py-2 text-right font-mono">1%</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-}
+    <script>
+        /* ==========================================
+           CONFIG & API
+           ========================================== */
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyUGGmD-CH_LhB2c7gO6a1afuYXAOtE3WyOsPTANcKF-phaBlmonPA_sDocGYj3LNVJ/exec'; // ⚠️ REPLACE THIS
+        
+        const API = {
+            async call(action, module, payload = {}) {
+                const body = { action, module, ...payload };
+                const res = await fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+                const json = await res.json();
+                if (!json.ok) throw new Error(json.error || 'API error');
+                return json.data;
+            },
+            list(m) { return this.call('list', m); },
+            create(m, d) { return this.call('create', m, { data: d }); },
+            update(m, id, d) { return this.call('update', m, { id, data: d }); },
+            delete(m, id) { return this.call('delete', m, { id }); },
+            getReport(type) { return this.call(type, null); },
+            seedDemo() { return this.call('demo', null); }
+        };
 
-// ============ EXPORT & MODAL ============
-function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function exportCSV() {
-  let csv = '';
-  if (currentModule === 'pj') csv = journalToCSV(data.purchaseJournal, ['date','ref','supplier','desc','acct','title','merch','other','inputVAT','ap','terms']);
-  else if (currentModule === 'cdj') csv = journalToCSV(data.cdj, ['date','ref','payee','desc','acct','ap','other','inputVAT','pdisc','cash','ewt','bank']);
-  else if (currentModule === 'sj') csv = journalToCSV(data.salesJournal, ['date','ref','customer','desc','terms','ar','sales','outputVAT','cogs','inv']);
-  else if (currentModule === 'crj') csv = journalToCSV(data.crj, ['date','ref','from','desc','cash','sdisc','ar','sales','outputVAT','other','cogs','inv']);
-  else if (currentModule === 'gj') csv = journalToCSV(data.generalJournal, ['date','ref','acct','title','desc','dr','cr']);
-  else if (currentModule === 'coa') csv = journalToCSV(data.chartOfAccounts, ['code','title','type','normal','statement','description']);
-  else if (currentModule === 'gl') {
-    const gl = computeGeneralLedger();
-    csv = journalToCSV(Object.values(gl), ['code','title','type','openingDr','openingCr','periodDr','periodCr','endingDr','endingCr']);
-  } else if (currentModule === 'tb') {
-    csv = journalToCSV(computeTrialBalance(), ['code','title','type','endingDr','endingCr']);
-  } else {
-    alert('Export available for journals, GL, and Trial Balance');
-    return;
-  }
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = currentModule + '_export.csv'; a.click();
-}
-function journalToCSV(arr, fields) {
-  const header = fields.join(',') + '\n';
-  const rows = arr.map(r => fields.map(f => {
-    const v = r[f];
-    return typeof v === 'string' && v.includes(',') ? `"${v}"` : (v ?? '');
-  }).join(',')).join('\n');
-  return header + rows;
-}
+        /* ==========================================
+           STATE & ROUTING
+           ========================================== */
+        const state = { coa: [], pj: [], cd: [], sj: [], cr: [], gj: [] };
+        let currentModule = 'dashboard';
 
-// Initialize
-showModule('dashboard');
-</script>
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', async (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                currentModule = item.dataset.module;
+                document.querySelectorAll('.module-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`module-${currentModule}`).classList.add('active');
+                document.getElementById('page-title').textContent = item.textContent.trim();
+                await renderModule(currentModule);
+            });
+        });
+
+        /* ==========================================
+           RENDERING ENGINE
+           ========================================== */
+        async function renderModule(mod) {
+            if (mod === 'dashboard') renderDashboard();
+            else if (mod === 'coa') renderTable('tbl-coa', state.coa, [
+                {key:'AccountCode'}, {key:'AccountName'}, {key:'AccountType'}, {key:'NormalBalance'}, 
+                {key:'Balance', align:'text-right', format: r => `₱ ${parseFloat(r.Balance||0).toLocaleString()}`}
+            ]);
+            else if (['pj','cd','sj','cr','gj'].includes(mod)) renderJournalTable(mod);
+            else if (mod === 'gl') await renderGL();
+            else if (mod === 'tb') await renderTB();
+            else if (mod === 'is') await renderIS();
+            else if (mod === 'bs') await renderBS();
+            else if (mod === 'vat') await renderVAT();
+            else if (mod === 'ewt') await renderEWT();
+        }
+
+        function renderTable(tbodyId, data, columns) {
+            const tbody = document.getElementById(tbodyId);
+            if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="${columns.length + 1}" class="p-4 text-center text-gray-400 italic">No records found.</td></tr>`; return; }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-gray-50">
+                    ${columns.map(col => `<td class="p-3 ${col.align || 'text-left'}">${col.format ? col.format(row) : (row[col.key] || '')}</td>`).join('')}
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <button onclick="editRow('${currentModule}', '${row.ID}')" class="text-indigo-600 hover:text-indigo-800 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteRow('${currentModule}', '${row.ID}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function renderJournalTable(mod) {
+            const cols = {
+                pj: [{key:'Date'},{key:'Reference'},{key:'Supplier'},{key:'AccountCode'},{key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                cd: [{key:'Date'},{key:'CheckNo'},{key:'Payee'},{key:'AccountCode'},{key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                sj: [{key:'Date'},{key:'InvoiceNo'},{key:'Customer'},{key:'AccountCode'},{key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                cr: [{key:'Date'},{key:'ORNo'},{key:'Customer'},{key:'AccountCode'},{key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                gj: [{key:'Date'},{key:'Reference'},{key:'AccountCode'},{key:'Debit',align:'text-right',format:r=>`₱ ${parseFloat(r.Debit||0).toLocaleString()}`},{key:'Credit',align:'text-right',format:r=>`₱ ${parseFloat(r.Credit||0).toLocaleString()}`}]
+            };
+            renderTable(`tbl-${mod}`, state[mod], cols[mod]);
+        }
+
+        function renderDashboard() {
+            let a=0,l=0,e=0,rev=0,exp=0;
+            state.coa.forEach(r => { const b = parseFloat(r.Balance)||0; if(r.AccountType==='Asset')a+=b; if(r.AccountType==='Liability')l+=b; if(r.AccountType==='Equity')e+=b; if(r.AccountType==='Revenue')rev+=b; if(r.AccountType==='Expense')exp+=b; });
+            document.getElementById('stat-assets').textContent = `₱ ${a.toLocaleString()}`;
+            document.getElementById('stat-liabilities').textContent = `₱ ${l.toLocaleString()}`;
+            document.getElementById('stat-equity').textContent = `₱ ${e.toLocaleString()}`;
+            document.getElementById('stat-income').textContent = `₱ ${(rev-exp).toLocaleString()}`;
+            
+            const recent = [...state.pj, ...state.sj].sort((a,b) => new Date(b.Date) - new Date(a.Date)).slice(0, 5);
+            document.getElementById('recent-tx').innerHTML = recent.length ? `<ul class="space-y-2">${recent.map(t => `<li class="flex justify-between border-b pb-1"><span>${t.Date} - ${t.Supplier || t.Customer}</span><span class="font-semibold">₱ ${parseFloat(t.Amount).toLocaleString()}</span></li>`).join('')}</ul>` : '<p class="text-gray-400 italic">No transactions yet.</p>';
+        }
+
+        async function renderGL() {
+            const data = await API.getReport('gl');
+            const container = document.getElementById('gl-container');
+            if (!data.length) { container.innerHTML = '<p class="text-gray-400 italic">No ledger entries.</p>'; return; }
+            container.innerHTML = data.map(acc => `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="gl-accordion p-4 font-semibold border-b flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <span>${acc.AccountCode} - ${acc.AccountName}</span>
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                    <table class="w-full text-sm hidden">
+                        <thead class="bg-gray-50 text-gray-600"><tr><th class="p-3 text-left">Date</th><th class="p-3 text-left">Ref</th><th class="p-3 text-left">Description</th><th class="p-3 text-right">Debit</th><th class="p-3 text-right">Credit</th></tr></thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${acc.Entries.map(e => `<tr><td class="p-3">${e.Date}</td><td class="p-3">${e.Ref}</td><td class="p-3">${e.Desc}</td><td class="p-3 text-right">${e.Debit ? '₱ '+e.Debit.toLocaleString() : ''}</td><td class="p-3 text-right">${e.Credit ? '₱ '+e.Credit.toLocaleString() : ''}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`).join('');
+        }
+
+        async function renderTB() {
+            const data = await API.getReport('tb');
+            let tDr=0, tCr=0;
+            document.getElementById('tbl-tb').innerHTML = data.map(r => { tDr+=r.Debit; tCr+=r.Credit; return `<tr><td class="p-3">${r.AccountCode}</td><td class="p-3">${r.AccountName}</td><td class="p-3 text-right">${r.Debit?'₱ '+r.Debit.toLocaleString():''}</td><td class="p-3 text-right">${r.Credit?'₱ '+r.Credit.toLocaleString():''}</td></tr>`; }).join('');
+            document.getElementById('tb-dr').textContent = `₱ ${tDr.toLocaleString()}`;
+            document.getElementById('tb-cr').textContent = `₱ ${tCr.toLocaleString()}`;
+        }
+
+        async function renderIS() {
+            const d = await API.getReport('is');
+            document.getElementById('is-container').innerHTML = `
+                <h4 class="font-bold text-gray-700 mb-2">Revenue</h4>
+                ${d.revenue.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><span>₱ ${r.Credit.toLocaleString()}</span></div>`).join('')}
+                <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>Total Revenue</span><span>₱ ${d.totalRevenue.toLocaleString()}</span></div>
+                <h4 class="font-bold text-gray-700 mb-2 mt-6">Expenses</h4>
+                ${d.expense.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><span>₱ ${r.Debit.toLocaleString()}</span></div>`).join('')}
+                <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>Total Expenses</span><span>₱ ${d.totalExpense.toLocaleString()}</span></div>
+                <div class="flex justify-between font-bold text-lg text-indigo-700 border-t-2 mt-4 pt-4"><span>NET INCOME</span><span>₱ ${d.netIncome.toLocaleString()}</span></div>`;
+        }
+
+        async function renderBS() {
+            const d = await API.getReport('bs');
+            const section = (title, items, total, key) => `
+                <h4 class="font-bold text-gray-700 mb-2">${title}</h4>
+                ${items.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><span>₱ ${r[key].toLocaleString()}</span></div>`).join('')}
+                <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>Total ${title}</span><span>₱ ${total.toLocaleString()}</span></div>`;
+            
+            document.getElementById('bs-container').innerHTML = `
+                ${section('Assets', d.assets, d.totalAsset, 'Debit')}
+                ${section('Liabilities', d.liabilities, d.totalLiability, 'Credit')}
+                ${section('Equity', d.equity, d.totalEquity, 'Credit')}
+                <div class="flex justify-between py-1 italic text-gray-600"><span>Net Income</span><span>₱ ${d.netIncome.toLocaleString()}</span></div>
+                <div class="flex justify-between font-bold text-lg border-t-2 mt-4 pt-4 ${d.balanced ? 'text-green-600' : 'text-red-600'}">
+                    <span>Total Liabilities & Equity</span><span>₱ ${(d.totalLiability + d.totalEquity).toLocaleString()}</span>
+                </div>
+                <p class="text-right text-sm mt-2 ${d.balanced ? 'text-green-600' : 'text-red-600'}">${d.balanced ? '✅ Balance Sheet is Balanced' : '❌ Out of Balance'}</p>`;
+        }
+
+        async function renderVAT() {
+            const d = await API.getReport('vat');
+            document.getElementById('vat-container').innerHTML = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div><h4 class="font-bold text-gray-700 mb-2">Output VAT (Sales)</h4>
+                        <div class="flex justify-between py-1"><span>VATable Sales</span><span>₱ ${d.totalSales.toLocaleString()}</span></div>
+                        <div class="flex justify-between py-1 font-bold"><span>Output VAT (12%)</span><span>₱ ${d.outputVat.toLocaleString()}</span></div>
+                    </div>
+                    <div><h4 class="font-bold text-gray-700 mb-2">Input VAT (Purchases)</h4>
+                        <div class="flex justify-between py-1"><span>VATable Purchases</span><span>₱ ${d.totalPurchases.toLocaleString()}</span></div>
+                        <div class="flex justify-between py-1 font-bold"><span>Input VAT (12%)</span><span>₱ ${d.inputVat.toLocaleString()}</span></div>
+                    </div>
+                </div>
+                <div class="flex justify-between font-bold text-lg text-indigo-700 border-t-2 mt-6 pt-4"><span>VAT PAYABLE</span><span>₱ ${d.vatPayable.toLocaleString()}</span></div>`;
+        }
+
+        async function renderEWT() {
+            const d = await API.getReport('ewt');
+            document.getElementById('tbl-ewt').innerHTML = d.items.map(r => `<tr><td class="p-3">${r.Date}</td><td class="p-3">${r.Ref}</td><td class="p-3">${r.Payee}</td><td class="p-3">${r.Account}</td><td class="p-3 text-right">₱ ${r.Base.toLocaleString()}</td><td class="p-3 text-right">₱ ${r.EWT.toLocaleString()}</td></tr>`).join('');
+            document.getElementById('ewt-base').textContent = `₱ ${d.totalBase.toLocaleString()}`;
+            document.getElementById('ewt-tax').textContent = `₱ ${d.totalEWT.toLocaleString()}`;
+        }
+
+        /* ==========================================
+           MODAL & FORMS
+           ========================================== */
+        const FIELDS = {
+            coa: ['AccountCode','AccountName','AccountType','NormalBalance','Balance'],
+            pj: ['Date','Reference','Supplier','AccountCode','Amount','Description'],
+            cd: ['Date','CheckNo','Payee','AccountCode','Amount','Description'],
+            sj: ['Date','InvoiceNo','Customer','AccountCode','Amount','Description'],
+            cr: ['Date','ORNo','Customer','AccountCode','Amount','Description'],
+            gj: ['Date','Reference','AccountCode','Debit','Credit','Description']
+        };
+
+        function openModal(mod, data = null) {
+            document.getElementById('f-module').value = mod;
+            document.getElementById('f-id').value = data ? data.ID : '';
+            document.getElementById('modal-title').textContent = data ? 'Edit Entry' : 'Add Entry';
+            document.getElementById('modal-fields').innerHTML = FIELDS[mod].map(f => {
+                const val = data ? (data[f] || '') : '';
+                if (f === 'AccountType') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Asset','Liability','Equity','Revenue','Expense'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
+                if (f === 'NormalBalance') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Debit','Credit'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
+                const type = f === 'Date' ? 'date' : (['Amount','Debit','Credit','Balance'].includes(f) ? 'number' : 'text');
+                return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><input type="${type}" name="${f}" value="${val}" step="0.01" class="w-full border rounded p-2 text-sm" required></div>`;
+            }).join('');
+            document.getElementById('modal').classList.add('active');
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+        document.getElementById('modal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mod = document.getElementById('f-module').value;
+            const id = document.getElementById('f-id').value;
+            const data = Object.fromEntries(new FormData(e.target).entries());
+            ['Amount','Debit','Credit','Balance'].forEach(k => { if(data[k]) data[k] = parseFloat(data[k]); });
+            try {
+                if (id) await API.update(mod, id, data); else await API.create(mod, data);
+                showToast('✅ Saved!'); closeModal(); await syncModule(mod);
+            } catch (err) { showToast('❌ ' + err.message, 'error'); }
+        });
+
+        function editRow(mod, id) { const row = state[mod].find(r => r.ID === id); if (row) openModal(mod, row); }
+        async function deleteRow(mod, id) {
+            if (!confirm('Delete this entry?')) return;
+            try { await API.delete(mod, id); showToast('🗑️ Deleted'); await syncModule(mod); } catch (err) { showToast('❌ ' + err.message, 'error'); }
+        }
+
+        /* ==========================================
+           SYNC & INIT
+           ========================================== */
+        async function syncModule(mod) { try { state[mod] = await API.list(mod); if (currentModule === mod) await renderModule(mod); } catch (err) { console.error(err); } }
+        
+        async function initApp() {
+            showToast('🔄 Syncing...');
+            await Promise.all(Object.keys(state).map(m => syncModule(m)));
+            renderDashboard();
+            showToast('✅ Ready!');
+        }
+
+        async function resetDemo() {
+            if (!confirm('Clear and reseed demo data?')) return;
+            await API.seedDemo();
+            await Promise.all(Object.keys(state).map(m => syncModule(m)));
+            renderDashboard();
+            showToast('🔄 Demo reset!');
+        }
+
+        function exportCSV() {
+            const data = state[currentModule];
+            if (!data || !data.length) return showToast('No data', 'error');
+            const headers = Object.keys(data[0]);
+            const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${r[h] || ''}"`).join(','))].join('\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `${currentModule}.csv`; a.click();
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast px-4 py-2 rounded shadow-lg text-white text-sm ${type === 'error' ? 'bg-red-500' : 'bg-green-600'}`;
+            t.textContent = msg; document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        initApp();
+    </script>
 </body>
 </html>
