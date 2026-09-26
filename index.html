@@ -273,10 +273,10 @@
             });
             
             const cols = {
-                pj: [{key:'Date'}, refCol('Reference'), {key:'Supplier'}, {key:'AccountCode'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
-                cd: [{key:'Date'}, refCol('CheckNo'),   {key:'Payee'},     {key:'AccountCode'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
-                sj: [{key:'Date'}, refCol('InvoiceNo'), {key:'Customer'},  {key:'AccountCode'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
-                cr: [{key:'Date'}, refCol('ORNo'),      {key:'Customer'},  {key:'AccountCode'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                pj: [{key:'Date'}, refCol('Reference'), {key:'Supplier'}, {key:'AccountName'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                cd: [{key:'Date'}, refCol('CheckNo'),   {key:'Payee'},     {key:'AccountName'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                sj: [{key:'Date'}, refCol('InvoiceNo'), {key:'Customer'},  {key:'AccountName'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
+                cr: [{key:'Date'}, refCol('ORNo'),      {key:'Customer'},  {key:'AccountName'}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
                 gj: [{key:'Date'}, refCol('Reference'), {key:'AccountCode'}, {key:'Debit',align:'text-right',format:r=>`₱ ${parseFloat(r.Debit||0).toLocaleString()}`}, {key:'Credit',align:'text-right',format:r=>`₱ ${parseFloat(r.Credit||0).toLocaleString()}`}]
             };
             renderTable(`tbl-${mod}`, state[mod], cols[mod]);
