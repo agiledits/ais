@@ -211,7 +211,7 @@
         /* ==========================================
            CONFIG & API
            ========================================== */
-        const API_URL = 'https://script.google.com/macros/s/AKfycby5ITQVa59k8lBTsJmcrtH-9VwyLmOInL3IjIm66T9j0sSJSM5Z5dKB_IAsPS-SpKM/exec'; // ⚠️ REPLACE WITH YOUR DEPLOYED URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx_0ni4xexrPbYHGvY83Y5sjxcoyHXgbyZkbs79aHhAG-85ZRi2dEC4brjSaZFpoas/exec'; // ⚠️ REPLACE WITH YOUR DEPLOYED URL
         
         const AUTO_REF_MODULES = {
             pj: 'Reference (PR-xxx)',
@@ -363,4 +363,317 @@
             const d = await API.getReport('bs');
             const section = (title, items, total, key) => `
                 <h4 class="font-bold text-gray-700 mb-2">${title}</h4>
-                ${items.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><
+                ${items.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><span>₱ ${r[key].toLocaleString()}</span></div>`).join('')}
+                <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>Total ${title}</span><span>₱ ${total.toLocaleString()}</span></div>`;
+            
+            document.getElementById('bs-container').innerHTML = `
+                ${section('Assets', d.assets, d.totalAsset, 'Debit')}
+                ${section('Liabilities', d.liabilities, d.totalLiability, 'Credit')}
+                ${section('Equity', d.equity, d.totalEquity, 'Credit')}
+                <div class="flex justify-between py-1 italic text-gray-600"><span>Net Income</span><span>₱ ${d.netIncome.toLocaleString()}</span></div>
+                <div class="flex justify-between font-bold text-lg border-t-2 mt-4 pt-4 ${d.balanced ? 'text-green-600' : 'text-red-600'}">
+                    <span>Total Liabilities & Equity</span><span>₱ ${(d.totalLiability + d.totalEquity).toLocaleString()}</span>
+                </div>
+                <p class="text-right text-sm mt-2 ${d.balanced ? 'text-green-600' : 'text-red-600'}">${d.balanced ? '✅ Balance Sheet is Balanced' : '❌ Out of Balance'}</p>`;
+        }
+
+        async function renderVAT() {
+            const d = await API.getReport('vat');
+            document.getElementById('vat-container').innerHTML = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div><h4 class="font-bold text-gray-700 mb-2">Output VAT (Sales)</h4>
+                        <div class="flex justify-between py-1"><span>VATable Sales</span><span>₱ ${d.totalSales.toLocaleString()}</span></div>
+                        <div class="flex justify-between py-1 font-bold"><span>Output VAT (12%)</span><span>₱ ${d.outputVat.toLocaleString()}</span></div>
+                    </div>
+                    <div><h4 class="font-bold text-gray-700 mb-2">Input VAT (Purchases)</h4>
+                        <div class="flex justify-between py-1"><span>VATable Purchases</span><span>₱ ${d.totalPurchases.toLocaleString()}</span></div>
+                        <div class="flex justify-between py-1 font-bold"><span>Input VAT (12%)</span><span>₱ ${d.inputVat.toLocaleString()}</span></div>
+                    </div>
+                </div>
+                <div class="flex justify-between font-bold text-lg text-indigo-700 border-t-2 mt-6 pt-4"><span>VAT PAYABLE</span><span>₱ ${d.vatPayable.toLocaleString()}</span></div>`;
+        }
+
+        async function renderEWT() {
+            const d = await API.getReport('ewt');
+            document.getElementById('tbl-ewt').innerHTML = d.items.map(r => `<tr><td class="p-3">${r.Date}</td><td class="p-3"><span class="auto-ref">${r.Ref}</span></td><td class="p-3">${r.Payee}</td><td class="p-3">${r.Account}</td><td class="p-3 text-right">₱ ${r.Base.toLocaleString()}</td><td class="p-3 text-right">₱ ${r.EWT.toLocaleString()}</td></tr>`).join('');
+            document.getElementById('ewt-base').textContent = `₱ ${d.totalBase.toLocaleString()}`;
+            document.getElementById('ewt-tax').textContent = `₱ ${d.totalEWT.toLocaleString()}`;
+        }
+
+        /* ==========================================
+           MODAL & FORMS
+           ========================================== */
+        const FIELDS = {
+            coa: ['AccountCode','AccountName','AccountType','NormalBalance','Balance'],
+            pj: ['Date','Supplier','AccountCode','Amount','Description'],
+            cd: ['Date','Payee','AccountCode','Amount','Description'],
+            sj: ['Date','Customer','AccountCode','Amount','Description'],
+            cr: ['Date','Customer','AccountCode','Amount','Description'],
+            gj: ['Date','AccountCode','Debit','Credit','Description']
+        };
+
+        function openModal(mod, data = null) {
+            document.getElementById('f-module').value = mod;
+            document.getElementById('f-id').value = data ? data.ID : '';
+            document.getElementById('modal-title').textContent = data ? 'Edit Entry' : 'Add Entry';
+            
+            const noteEl = document.getElementById('modal-ref-note');
+            if (AUTO_REF_MODULES[mod]) {
+                noteEl.textContent = `✨ ${AUTO_REF_MODULES[mod]} will be auto-generated upon saving.`;
+                noteEl.classList.remove('hidden');
+            } else {
+                noteEl.classList.add('hidden');
+            }
+            
+            document.getElementById('modal-fields').innerHTML = FIELDS[mod].map(f => {
+                const val = data ? (data[f] || '') : '';
+                
+                if (f === 'AccountCode' && mod !== 'coa') {
+                    const sortedCoa = [...state.coa].sort((a, b) => a.AccountCode.localeCompare(b.AccountCode));
+                    const options = sortedCoa.map(acc => 
+                        `<option value="${acc.AccountCode}" ${String(acc.AccountCode) === String(val) ? 'selected' : ''}>${acc.AccountCode} — ${acc.AccountName}</option>`
+                    ).join('');
+                    return `<div>
+                        <label class="block text-xs text-gray-600 mb-1">Account Name</label>
+                        <select name="AccountCode" class="w-full border rounded p-2 text-sm bg-white" required>
+                            <option value="">-- Select Account --</option>
+                            ${options}
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Choose from the Chart of Accounts</p>
+                    </div>`;
+                }
+                
+                if (f === 'AccountType') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Asset','Liability','Equity','Revenue','Expense'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
+                if (f === 'NormalBalance') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Debit','Credit'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
+                const type = f === 'Date' ? 'date' : (['Amount','Debit','Credit','Balance'].includes(f) ? 'number' : 'text');
+                return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><input type="${type}" name="${f}" value="${val}" step="0.01" class="w-full border rounded p-2 text-sm" required></div>`;
+            }).join('');
+            document.getElementById('modal').classList.add('active');
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+        document.getElementById('modal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mod = document.getElementById('f-module').value;
+            const id = document.getElementById('f-id').value;
+            const data = Object.fromEntries(new FormData(e.target).entries());
+            ['Amount','Debit','Credit','Balance'].forEach(k => { if(data[k]) data[k] = parseFloat(data[k]); });
+            try {
+                if (id) await API.update(mod, id, data); else await API.create(mod, data);
+                showToast('✅ Saved!'); closeModal(); await syncModule(mod);
+            } catch (err) { showToast('❌ ' + err.message, 'error'); }
+        });
+
+        function editRow(mod, id) { const row = state[mod].find(r => r.ID === id); if (row) openModal(mod, row); }
+        async function deleteRow(mod, id) {
+            if (!confirm('Delete this entry?')) return;
+            try { await API.delete(mod, id); showToast('🗑️ Deleted'); await syncModule(mod); } catch (err) { showToast('❌ ' + err.message, 'error'); }
+        }
+
+        /* ==========================================
+           EXCEL EXPORT FUNCTIONS
+           ========================================== */
+        
+        function checkXLSX() {
+            if (typeof XLSX === 'undefined') {
+                showToast('❌ Excel library not loaded. Please refresh the page.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function exportCurrentExcel() {
+            if (!checkXLSX()) return;
+            
+            const mod = currentModule;
+            const data = state[mod];
+            
+            if (!data || data.length === 0) {
+                return showToast('No data to export in this module', 'error');
+            }
+            
+            const moduleNames = {
+                coa: 'Chart of Accounts',
+                pj: 'Purchase Journal',
+                cd: 'Cash Disbursement',
+                sj: 'Sales Journal',
+                cr: 'Cash Receipts',
+                gj: 'General Journal'
+            };
+            
+            const headers = Object.keys(data[0]).filter(h => h !== 'ID');
+            const rows = data.map(row => {
+                const newRow = {};
+                headers.forEach(h => newRow[h] = row[h]);
+                return newRow;
+            });
+            
+            try {
+                const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+                
+                const colWidths = headers.map(h => {
+                    if (h === 'Description') return { wch: 40 };
+                    if (['Amount', 'Debit', 'Credit', 'Balance'].includes(h)) return { wch: 15 };
+                    if (h === 'Date') return { wch: 12 };
+                    if (['AccountName', 'Supplier', 'Customer', 'Payee'].includes(h)) return { wch: 25 };
+                    return { wch: 18 };
+                });
+                ws['!cols'] = colWidths;
+                
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, moduleNames[mod] || mod.toUpperCase());
+                
+                const dateStr = new Date().toISOString().split('T')[0];
+                const filename = `ABC_Trading_${moduleNames[mod].replace(/\s+/g, '_')}_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                showToast(`✅ Exported ${moduleNames[mod]} to Excel`);
+            } catch (err) {
+                showToast('❌ Export failed: ' + err.message, 'error');
+                console.error(err);
+            }
+        }
+
+        function exportAllExcel() {
+            if (!checkXLSX()) return;
+            
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const moduleConfig = {
+                    coa: { name: 'Chart of Accounts', currencyCols: ['Balance'], dateCols: [] },
+                    pj:  { name: 'Purchase Journal',  currencyCols: ['Amount'], dateCols: ['Date'] },
+                    cd:  { name: 'Cash Disbursement', currencyCols: ['Amount'], dateCols: ['Date'] },
+                    sj:  { name: 'Sales Journal',     currencyCols: ['Amount'], dateCols: ['Date'] },
+                    cr:  { name: 'Cash Receipts',     currencyCols: ['Amount'], dateCols: ['Date'] },
+                    gj:  { name: 'General Journal',   currencyCols: ['Debit', 'Credit'], dateCols: ['Date'] }
+                };
+                
+                let hasData = false;
+                
+                Object.keys(moduleConfig).forEach(mod => {
+                    const data = state[mod];
+                    const cfg = moduleConfig[mod];
+                    
+                    if (!data || data.length === 0) return;
+                    hasData = true;
+                    
+                    const headers = Object.keys(data[0]).filter(h => h !== 'ID');
+                    const rows = data.map(row => {
+                        const newRow = {};
+                        headers.forEach(h => newRow[h] = row[h]);
+                        return newRow;
+                    });
+                    
+                    const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+                    
+                    const colWidths = headers.map(h => {
+                        if (h === 'Description') return { wch: 40 };
+                        if (cfg.currencyCols.includes(h)) return { wch: 15 };
+                        if (h === 'Date') return { wch: 12 };
+                        if (['AccountName', 'Supplier', 'Customer', 'Payee'].includes(h)) return { wch: 25 };
+                        return { wch: 18 };
+                    });
+                    ws['!cols'] = colWidths;
+                    
+                    XLSX.utils.book_append_sheet(wb, ws, cfg.name.substring(0, 31));
+                });
+                
+                const summaryData = generateSummaryData();
+                const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+                wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+                XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary', 0);
+                
+                if (!hasData) {
+                    return showToast('No data to export', 'error');
+                }
+                
+                const dateStr = new Date().toISOString().split('T')[0];
+                const filename = `ABC_Trading_Full_Export_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                showToast('✅ Full accounting data exported to Excel');
+            } catch (err) {
+                showToast('❌ Export failed: ' + err.message, 'error');
+                console.error(err);
+            }
+        }
+
+        function generateSummaryData() {
+            let totalAssets = 0, totalLiabilities = 0, totalEquity = 0, totalRevenue = 0, totalExpense = 0;
+            
+            state.coa.forEach(r => {
+                const b = parseFloat(r.Balance) || 0;
+                if (r.AccountType === 'Asset') totalAssets += b;
+                if (r.AccountType === 'Liability') totalLiabilities += b;
+                if (r.AccountType === 'Equity') totalEquity += b;
+                if (r.AccountType === 'Revenue') totalRevenue += b;
+                if (r.AccountType === 'Expense') totalExpense += b;
+            });
+            
+            const netIncome = totalRevenue - totalExpense;
+            
+            return [
+                ['ABC TRADING CORP. - ACCOUNTING SUMMARY'],
+                ['Generated:', new Date().toLocaleString()],
+                ['Period:', 'January 2026'],
+                [],
+                ['FINANCIAL POSITION'],
+                ['Total Assets:', totalAssets],
+                ['Total Liabilities:', totalLiabilities],
+                ['Total Equity:', totalEquity],
+                [],
+                ['PERFORMANCE'],
+                ['Total Revenue:', totalRevenue],
+                ['Total Expenses:', totalExpense],
+                ['Net Income:', netIncome],
+                [],
+                ['TRANSACTION COUNTS'],
+                ['Purchase Journal Entries:', state.pj.length],
+                ['Cash Disbursement Entries:', state.cd.length],
+                ['Sales Journal Entries:', state.sj.length],
+                ['Cash Receipts Entries:', state.cr.length],
+                ['General Journal Entries:', state.gj.length],
+                ['Chart of Accounts:', state.coa.length]
+            ];
+        }
+
+        function exportCSV() {
+            const data = state[currentModule];
+            if (!data || !data.length) return showToast('No data to export', 'error');
+            const headers = Object.keys(data[0]);
+            const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${r[h] || ''}"`).join(','))].join('\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `${currentModule}.csv`; a.click();
+        }
+
+        /* ==========================================
+           SYNC & INIT
+           ========================================== */
+        async function syncModule(mod) { try { state[mod] = await API.list(mod); if (currentModule === mod) await renderModule(mod); } catch (err) { console.error(err); } }
+        
+        async function initApp() {
+            showToast('🔄 Syncing with Google Sheets...');
+            await Promise.all(Object.keys(state).map(m => syncModule(m)));
+            renderDashboard();
+            showToast('✅ Ready!');
+        }
+
+        async function resetDemo() {
+            if (!confirm('Clear and reseed demo data in Google Sheets?')) return;
+            await API.seedDemo();
+            await Promise.all(Object.keys(state).map(m => syncModule(m)));
+            renderDashboard();
+            showToast('🔄 Demo data reset!');
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast px-4 py-2 rounded shadow-lg text-white text-sm ${type === 'error' ? 'bg-red-500' : 'bg-green-600'}`;
+            t.textContent = msg; document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
