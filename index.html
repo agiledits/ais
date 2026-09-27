@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABC Trading Corp. - Accounting Information System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- ✅ FIXED: Using more reliable SheetJS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -68,7 +67,9 @@
         <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm">
             <h2 id="page-title" class="text-lg font-semibold text-gray-800">Dashboard</h2>
             <div class="flex gap-2">
-                <!-- ✅ FIXED: Dropdown with proper Excel export -->
+                <button onclick="setupGoogleSheets()" class="px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 rounded text-indigo-700 border border-indigo-200">
+                    <i class="fas fa-cogs mr-1"></i> Setup Sheets
+                </button>
                 <div class="relative dropdown">
                     <button class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded text-gray-700 flex items-center">
                         <i class="fas fa-file-excel mr-1 text-green-600"></i> Export 
@@ -209,11 +210,11 @@
     </div>
     <div id="toast-container" class="fixed bottom-4 right-4 space-y-2 z-50"></div>
 
-    <script>
+        <script>
         /* ==========================================
            CONFIG & API
            ========================================== */
-        const API_URL = 'https://script.google.com/macros/s/AKfycby5ITQVa59k8lBTsJmcrtH-9VwyLmOInL3IjIm66T9j0sSJSM5Z5dKB_IAsPS-SpKM/exec'; // ⚠️ REPLACE WITH YOUR DEPLOYED URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxPLEM43qthpvm2TwLmqjv9IoPQuEMRuugvLLqHtPRwAFQtjomoiSKv3tgPr1J1sag/exec'; // ⚠️ REPLACE WITH YOUR DEPLOYED URL
         
         const AUTO_REF_MODULES = {
             pj: 'Reference (PR-xxx)',
@@ -226,7 +227,12 @@
         const API = {
             async call(action, module, payload = {}) {
                 const body = { action, module, ...payload };
-                const res = await fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(body)
+                });
                 const json = await res.json();
                 if (!json.ok) throw new Error(json.error || 'API error');
                 return json.data;
@@ -236,7 +242,8 @@
             update(m, id, d) { return this.call('update', m, { id, data: d }); },
             delete(m, id) { return this.call('delete', m, { id }); },
             getReport(type) { return this.call(type, null); },
-            seedDemo() { return this.call('demo', null); }
+            seedDemo() { return this.call('demo', null); },
+            setup() { return this.call('setup', null); }
         };
 
         /* ==========================================
@@ -294,12 +301,10 @@
                 key, 
                 format: r => r[key] ? `<span class="auto-ref">${r[key]}</span>` : '<span class="text-gray-400 italic text-xs">pending</span>'
             });
-            
             const getAccountName = (code) => {
                 const acc = state.coa.find(a => a.AccountCode === code);
                 return acc ? acc.AccountName : code;
             };
-            
             const cols = {
                 pj: [{key:'Date'}, refCol('Reference'), {key:'Supplier'}, {key:'AccountCode', format: r => getAccountName(r.AccountCode)}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
                 cd: [{key:'Date'}, refCol('CheckNo'),   {key:'Payee'},     {key:'AccountCode', format: r => getAccountName(r.AccountCode)}, {key:'Amount',align:'text-right',format:r=>`₱ ${parseFloat(r.Amount||0).toLocaleString()}`}],
@@ -317,7 +322,6 @@
             document.getElementById('stat-liabilities').textContent = `₱ ${l.toLocaleString()}`;
             document.getElementById('stat-equity').textContent = `₱ ${e.toLocaleString()}`;
             document.getElementById('stat-income').textContent = `₱ ${(rev-exp).toLocaleString()}`;
-            
             const recent = [...state.pj, ...state.sj].sort((a,b) => new Date(b.Date) - new Date(a.Date)).slice(0, 5);
             document.getElementById('recent-tx').innerHTML = recent.length ? `<ul class="space-y-2">${recent.map(t => `<li class="flex justify-between border-b pb-1"><span>${t.Date} - ${t.Reference || t.InvoiceNo || ''} - ${t.Supplier || t.Customer}</span><span class="font-semibold">₱ ${parseFloat(t.Amount).toLocaleString()}</span></li>`).join('')}</ul>` : '<p class="text-gray-400 italic">No transactions yet.</p>';
         }
@@ -367,7 +371,6 @@
                 <h4 class="font-bold text-gray-700 mb-2">${title}</h4>
                 ${items.map(r => `<div class="flex justify-between py-1"><span>${r.AccountName}</span><span>₱ ${r[key].toLocaleString()}</span></div>`).join('')}
                 <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>Total ${title}</span><span>₱ ${total.toLocaleString()}</span></div>`;
-            
             document.getElementById('bs-container').innerHTML = `
                 ${section('Assets', d.assets, d.totalAsset, 'Debit')}
                 ${section('Liabilities', d.liabilities, d.totalLiability, 'Credit')}
@@ -418,7 +421,6 @@
             document.getElementById('f-module').value = mod;
             document.getElementById('f-id').value = data ? data.ID : '';
             document.getElementById('modal-title').textContent = data ? 'Edit Entry' : 'Add Entry';
-            
             const noteEl = document.getElementById('modal-ref-note');
             if (AUTO_REF_MODULES[mod]) {
                 noteEl.textContent = `✨ ${AUTO_REF_MODULES[mod]} will be auto-generated upon saving.`;
@@ -426,25 +428,15 @@
             } else {
                 noteEl.classList.add('hidden');
             }
-            
             document.getElementById('modal-fields').innerHTML = FIELDS[mod].map(f => {
                 const val = data ? (data[f] || '') : '';
-                
                 if (f === 'AccountCode' && mod !== 'coa') {
                     const sortedCoa = [...state.coa].sort((a, b) => a.AccountCode.localeCompare(b.AccountCode));
                     const options = sortedCoa.map(acc => 
                         `<option value="${acc.AccountCode}" ${String(acc.AccountCode) === String(val) ? 'selected' : ''}>${acc.AccountCode} — ${acc.AccountName}</option>`
                     ).join('');
-                    return `<div>
-                        <label class="block text-xs text-gray-600 mb-1">Account Name</label>
-                        <select name="AccountCode" class="w-full border rounded p-2 text-sm bg-white" required>
-                            <option value="">-- Select Account --</option>
-                            ${options}
-                        </select>
-                        <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Choose from the Chart of Accounts</p>
-                    </div>`;
+                    return `<div><label class="block text-xs text-gray-600 mb-1">Account Name</label><select name="AccountCode" class="w-full border rounded p-2 text-sm bg-white" required><option value="">-- Select Account --</option>${options}</select><p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Choose from the Chart of Accounts</p></div>`;
                 }
-                
                 if (f === 'AccountType') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Asset','Liability','Equity','Revenue','Expense'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
                 if (f === 'NormalBalance') return `<div><label class="block text-xs text-gray-600 mb-1">${f}</label><select name="${f}" class="w-full border rounded p-2 text-sm">${['Debit','Credit'].map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`;
                 const type = f === 'Date' ? 'date' : (['Amount','Debit','Credit','Balance'].includes(f) ? 'number' : 'text');
@@ -473,10 +465,24 @@
         }
 
         /* ==========================================
-           ✅ FIXED EXCEL EXPORT FUNCTIONS
+           ✅ FIXED: SETUP GOOGLE SHEETS
            ========================================== */
-        
-        // Check if XLSX library is loaded
+        async function setupGoogleSheets() {
+            showToast('🔧 Setting up Google Sheets...');
+            try {
+                const result = await API.setup();
+                showToast(`✅ Setup complete! Created ${result.created} sheet(s), ${result.existing} already existed.`);
+                await Promise.all(Object.keys(state).map(m => syncModule(m)));
+                renderDashboard();
+            } catch (err) {
+                showToast('❌ Setup failed: ' + err.message, 'error');
+                console.error('Setup error:', err);
+            }
+        }
+
+        /* ==========================================
+           EXCEL EXPORT
+           ========================================== */
         function checkXLSX() {
             if (typeof XLSX === 'undefined') {
                 showToast('❌ Excel library not loaded. Please refresh the page.', 'error');
@@ -485,210 +491,105 @@
             return true;
         }
 
-        // Export current module as Excel
         function exportCurrentExcel() {
             if (!checkXLSX()) return;
-            
             const mod = currentModule;
             const data = state[mod];
-            
-            if (!data || data.length === 0) {
-                return showToast('No data to export in this module', 'error');
-            }
-            
-            const moduleNames = {
-                coa: 'Chart of Accounts',
-                pj: 'Purchase Journal',
-                cd: 'Cash Disbursement',
-                sj: 'Sales Journal',
-                cr: 'Cash Receipts',
-                gj: 'General Journal'
-            };
-            
-            // Remove ID column
+            if (!data || data.length === 0) return showToast('No data to export', 'error');
+            const moduleNames = { coa:'Chart of Accounts', pj:'Purchase Journal', cd:'Cash Disbursement', sj:'Sales Journal', cr:'Cash Receipts', gj:'General Journal' };
             const headers = Object.keys(data[0]).filter(h => h !== 'ID');
-            const rows = data.map(row => {
-                const newRow = {};
-                headers.forEach(h => newRow[h] = row[h]);
-                return newRow;
-            });
-            
+            const rows = data.map(row => { const n = {}; headers.forEach(h => n[h] = row[h]); return n; });
             try {
-                // Create worksheet
                 const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-                
-                // Set column widths
-                const colWidths = headers.map(h => {
-                    if (h === 'Description') return { wch: 40 };
-                    if (['Amount', 'Debit', 'Credit', 'Balance'].includes(h)) return { wch: 15 };
-                    if (h === 'Date') return { wch: 12 };
-                    if (['AccountName', 'Supplier', 'Customer', 'Payee'].includes(h)) return { wch: 25 };
-                    return { wch: 18 };
-                });
-                ws['!cols'] = colWidths;
-                
-                // Create workbook
+                ws['!cols'] = headers.map(h => ({ wch: h === 'Description' ? 40 : ['Amount','Debit','Credit','Balance'].includes(h) ? 15 : h === 'Date' ? 12 : 20 }));
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, moduleNames[mod] || mod.toUpperCase());
-                
-                // Generate filename
-                const dateStr = new Date().toISOString().split('T')[0];
-                const filename = `ABC_Trading_${moduleNames[mod].replace(/\s+/g, '_')}_${dateStr}.xlsx`;
-                
-                // Download
-                XLSX.writeFile(wb, filename);
+                XLSX.utils.book_append_sheet(wb, ws, moduleNames[mod] || mod);
+                XLSX.writeFile(wb, `ABC_Trading_${(moduleNames[mod]||mod).replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
                 showToast(`✅ Exported ${moduleNames[mod]} to Excel`);
-            } catch (err) {
-                showToast('❌ Export failed: ' + err.message, 'error');
-                console.error(err);
-            }
+            } catch (err) { showToast('❌ Export failed: ' + err.message, 'error'); }
         }
 
-        // Export ALL modules as multi-sheet Excel workbook
         function exportAllExcel() {
             if (!checkXLSX()) return;
-            
             try {
                 const wb = XLSX.utils.book_new();
-                
-                const moduleConfig = {
-                    coa: { name: 'Chart of Accounts', currencyCols: ['Balance'], dateCols: [] },
-                    pj:  { name: 'Purchase Journal',  currencyCols: ['Amount'], dateCols: ['Date'] },
-                    cd:  { name: 'Cash Disbursement', currencyCols: ['Amount'], dateCols: ['Date'] },
-                    sj:  { name: 'Sales Journal',     currencyCols: ['Amount'], dateCols: ['Date'] },
-                    cr:  { name: 'Cash Receipts',     currencyCols: ['Amount'], dateCols: ['Date'] },
-                    gj:  { name: 'General Journal',   currencyCols: ['Debit', 'Credit'], dateCols: ['Date'] }
-                };
-                
+                const cfg = { coa:'Chart of Accounts', pj:'Purchase Journal', cd:'Cash Disbursement', sj:'Sales Journal', cr:'Cash Receipts', gj:'General Journal' };
                 let hasData = false;
-                
-                Object.keys(moduleConfig).forEach(mod => {
+                Object.keys(cfg).forEach(mod => {
                     const data = state[mod];
-                    const cfg = moduleConfig[mod];
-                    
-                    if (!data || data.length === 0) return;
+                    if (!data || !data.length) return;
                     hasData = true;
-                    
-                    // Remove ID column
                     const headers = Object.keys(data[0]).filter(h => h !== 'ID');
-                    const rows = data.map(row => {
-                        const newRow = {};
-                        headers.forEach(h => newRow[h] = row[h]);
-                        return newRow;
-                    });
-                    
-                    // Create worksheet
+                    const rows = data.map(row => { const n = {}; headers.forEach(h => n[h] = row[h]); return n; });
                     const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-                    
-                    // Set column widths
-                    const colWidths = headers.map(h => {
-                        if (h === 'Description') return { wch: 40 };
-                        if (cfg.currencyCols.includes(h)) return { wch: 15 };
-                        if (h === 'Date') return { wch: 12 };
-                        if (['AccountName', 'Supplier', 'Customer', 'Payee'].includes(h)) return { wch: 25 };
-                        return { wch: 18 };
-                    });
-                    ws['!cols'] = colWidths;
-                    
-                    // Append to workbook
-                    XLSX.utils.book_append_sheet(wb, ws, cfg.name.substring(0, 31));
+                    ws['!cols'] = headers.map(h => ({ wch: h === 'Description' ? 40 : 15 }));
+                    XLSX.utils.book_append_sheet(wb, ws, cfg[mod].substring(0, 31));
                 });
-                
-                // Add Summary sheet
-                const summaryData = generateSummaryData();
-                const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-                wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
-                XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary', 0);
-                
-                if (!hasData) {
-                    return showToast('No data to export', 'error');
-                }
-                
-                // Generate filename
-                const dateStr = new Date().toISOString().split('T')[0];
-                const filename = `ABC_Trading_Full_Export_${dateStr}.xlsx`;
-                
-                XLSX.writeFile(wb, filename);
-                showToast('✅ Full accounting data exported to Excel');
-            } catch (err) {
-                showToast('❌ Export failed: ' + err.message, 'error');
-                console.error(err);
-            }
+                const sd = generateSummaryData();
+                const wsS = XLSX.utils.aoa_to_sheet(sd);
+                wsS['!cols'] = [{ wch: 30 }, { wch: 20 }];
+                XLSX.utils.book_append_sheet(wb, wsS, 'Summary', 0);
+                if (!hasData) return showToast('No data to export', 'error');
+                XLSX.writeFile(wb, `ABC_Trading_Full_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showToast('✅ Full data exported to Excel');
+            } catch (err) { showToast('❌ Export failed: ' + err.message, 'error'); }
         }
 
-        // Generate summary sheet data
         function generateSummaryData() {
-            let totalAssets = 0, totalLiabilities = 0, totalEquity = 0, totalRevenue = 0, totalExpense = 0;
-            
-            state.coa.forEach(r => {
-                const b = parseFloat(r.Balance) || 0;
-                if (r.AccountType === 'Asset') totalAssets += b;
-                if (r.AccountType === 'Liability') totalLiabilities += b;
-                if (r.AccountType === 'Equity') totalEquity += b;
-                if (r.AccountType === 'Revenue') totalRevenue += b;
-                if (r.AccountType === 'Expense') totalExpense += b;
-            });
-            
-            const netIncome = totalRevenue - totalExpense;
-            
-            return [
-                ['ABC TRADING CORP. - ACCOUNTING SUMMARY'],
-                ['Generated:', new Date().toLocaleString()],
-                ['Period:', 'January 2026'],
-                [],
-                ['FINANCIAL POSITION'],
-                ['Total Assets:', totalAssets],
-                ['Total Liabilities:', totalLiabilities],
-                ['Total Equity:', totalEquity],
-                [],
-                ['PERFORMANCE'],
-                ['Total Revenue:', totalRevenue],
-                ['Total Expenses:', totalExpense],
-                ['Net Income:', netIncome],
-                [],
-                ['TRANSACTION COUNTS'],
-                ['Purchase Journal Entries:', state.pj.length],
-                ['Cash Disbursement Entries:', state.cd.length],
-                ['Sales Journal Entries:', state.sj.length],
-                ['Cash Receipts Entries:', state.cr.length],
-                ['General Journal Entries:', state.gj.length],
-                ['Chart of Accounts:', state.coa.length]
-            ];
+            let a=0,l=0,e=0,rev=0,exp=0;
+            state.coa.forEach(r => { const b = parseFloat(r.Balance)||0; if(r.AccountType==='Asset')a+=b; if(r.AccountType==='Liability')l+=b; if(r.AccountType==='Equity')e+=b; if(r.AccountType==='Revenue')rev+=b; if(r.AccountType==='Expense')exp+=b; });
+            return [['ABC TRADING CORP. - SUMMARY'],['Generated:', new Date().toLocaleString()],[],['Total Assets:',a],['Total Liabilities:',l],['Total Equity:',e],['Net Income:',rev-exp],[],['PJ Entries:',state.pj.length],['SJ Entries:',state.sj.length],['GJ Entries:',state.gj.length]];
         }
 
-        // Legacy CSV export
         function exportCSV() {
             const data = state[currentModule];
-            if (!data || !data.length) return showToast('No data to export', 'error');
+            if (!data || !data.length) return showToast('No data', 'error');
             const headers = Object.keys(data[0]);
-            const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${r[h] || ''}"`).join(','))].join('\n');
+            const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${r[h]||''}"`).join(','))].join('\n');
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `${currentModule}.csv`; a.click();
         }
 
         /* ==========================================
-           SYNC & INIT
+           ✅ FIXED: AUTO-SETUP ON FIRST LOAD
            ========================================== */
-        async function syncModule(mod) { try { state[mod] = await API.list(mod); if (currentModule === mod) await renderModule(mod); } catch (err) { console.error(err); } }
+        async function syncModule(mod) {
+            try {
+                state[mod] = await API.list(mod);
+                if (currentModule === mod) await renderModule(mod);
+            } catch (err) { console.error(err); }
+        }
         
         async function initApp() {
-            showToast('🔄 Syncing with Google Sheets...');
-            await Promise.all(Object.keys(state).map(m => syncModule(m)));
-            renderDashboard();
-            showToast('✅ Ready!');
+            showToast('🔄 Connecting to Google Sheets...');
+            try {
+                // ✅ AUTO-SETUP: Create sheets if they don't exist
+                await API.setup();
+                
+                // Load all data
+                await Promise.all(Object.keys(state).map(m => syncModule(m)));
+                renderDashboard();
+                showToast('✅ Ready!');
+            } catch (err) {
+                showToast('⚠️ Connection issue. Click "Setup Sheets" to initialize.', 'error');
+                console.error('Init error:', err);
+            }
         }
 
         async function resetDemo() {
-            if (!confirm('Clear and reseed demo data in Google Sheets?')) return;
-            await API.seedDemo();
-            await Promise.all(Object.keys(state).map(m => syncModule(m)));
-            renderDashboard();
-            showToast('🔄 Demo data reset!');
+            if (!confirm('Clear and reseed demo data?')) return;
+            try {
+                await API.seedDemo();
+                await Promise.all(Object.keys(state).map(m => syncModule(m)));
+                renderDashboard();
+                showToast('🔄 Demo data reset!');
+            } catch (err) { showToast('❌ ' + err.message, 'error'); }
         }
 
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');
             t.className = `toast px-4 py-2 rounded shadow-lg text-white text-sm ${type === 'error' ? 'bg-red-500' : 'bg-green-600'}`;
-            t.textContent = msg; document.getElementById('toast-container').appendChild(t);
+            t.textContent = msg;
+            document.getElementById('toast-container').appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
 
